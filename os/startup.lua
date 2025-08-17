@@ -132,14 +132,16 @@ if string.find(mountPath,"disk",nil,true) then
         if installerLog then installerLog:write("----------------------------END-OF-INSTALLER-LOG----------------------------") end
         if installerLog then installerLog:close() end
         peripheral.find("drive",function (_,diskDrive)
-        local mountPath = diskDrive.getMountPath()
-            if fs.exists(mountPath.."/startup.lua") then
-                local temp =  io.open(mountPath.."/startup.lua","r")
-                local content = temp:read("a")
-                temp:close()
-                if string.find(content,"--[[REDOS-INSTALLER]]",nil,true) then
-                    diskDrive.setDiskLabel("RedOS-Disk")
-                    diskDrive.ejectDisk()
+            local mountPath = diskDrive.getMountPath()
+            if mountPath then
+                if fs.exists(mountPath.."/startup.lua") then
+                    local temp =  io.open(mountPath.."/startup.lua","r")
+                    local content = temp:read("a")
+                    temp:close()
+                    if string.find(content,"--[[REDOS-INSTALLER]]",nil,true) then
+                        diskDrive.setDiskLabel("RedOS-Disk")
+                        diskDrive.ejectDisk()
+                    end
                 end
             end
         end)
