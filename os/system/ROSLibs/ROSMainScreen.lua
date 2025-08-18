@@ -4,13 +4,91 @@ MainScreenElements.__index = MainScreenElements
 if UIs.mainScreen then os.reboot() end
 UIs.mainScreen = graphicLib.Frame:init("RedOS")
 
-local screenELements = {}
+local screenElements = {}
 
 local sizeX, sizeY = term.getSize()
 
+local taskBarState = {text={"R","O","S",nil,"0"},state=nil}
+
+for i=1,sizeX do
+    if taskBarState.text[i] == nil then
+        taskBarState.text[i] = " "
+    end
+end
+
+local function makeTaskBar()
+    local taskBarString = ""
+    for i=1,#taskBarState.text do
+        taskBarString = taskBarString .. taskBarState.text[i]
+    end
+    return taskBarString
+end
+
+local currentPage, maxPage = 1, 1
+local function resetTaskBar()
+    taskBarState = {text={"R","O","S",nil,"0"},state={"default"}}
+
+    for i=1,sizeX do
+        if taskBarState.text[i] == nil then
+            taskBarState.text[i] = " "
+        end
+    end
+
+    taskBarState.text[sizeX] = "\026"
+    taskBarState.text[sizeX-1] = "\027"
+    taskBarState.text[sizeX-2] = maxPage
+    taskBarState.text[sizeX-3] = "/"
+    taskBarState.text[sizeX-4] = currentPage
+    taskBarState.text[sizeX-6] = "+"
+
+    return makeTaskBar()
+end
+
+local function ColorTaskBar(isBackground,colorTable)
+    local colorScheme
+    if not isBackground then
+        colorScheme = {{colors.red,1},{colors.yellow,2},{colors.red,5},{colors.white,6}}
+        if type(colorTable) == "table" then
+            for i=1,#colorTable do
+                if type(colorTable[i]) == "table" then
+                    table.insert(colorScheme,colorTable[i])
+                end
+            end
+        end
+    else
+        colorScheme = {{colors.lightGray,1},{colors.gray,sizeX-1}}
+        if type(colorTable) == "table" then
+            for i=1,#colorTable do
+                if type(colorTable[i]) == "table" then
+                    table.insert(colorScheme,colorTable[i])
+                end
+            end
+        end
+    end
+    return colorScheme
+end
+
+local function removeItemFromTable(tableIn,item)
+    if not item or type(tableIn) ~= "table" then return tableIn end
+    for i=1,#tableIn do
+        if item == tableIn[i] then
+            table.remove(tableIn,i)
+        end
+    end
+    return tableIn
+end
+
+local function doesTableContainItem(tableIn,item)
+    if not item or type(tableIn) ~= "table" then return false end
+    for i=1,#tableIn do
+        if item == tableIn[i] then return true end
+    end
+    return false
+end
+
 local fileTextDisplay = UIs.mainScreen.hologram:addHologram("",nil,nil,nil,1,1,false,nil,true)
 local dirTextDisplay = UIs.mainScreen.hologram:addHologram("",nil,nil,nil,1,1,false,false,true)
-local taskBar = UIs.mainScreen.hologram:addHologram("ROS 0"..string.rep(" ",sizeX-5),{{colors.red,1},{colors.yellow,2},{colors.red,5},{colors.white,6}},{{colors.lightGray,1}},nil,1,sizeY)
+local taskBar = UIs.mainScreen.hologram:addHologram(resetTaskBar(),ColorTaskBar(),ColorTaskBar(true),nil,1,sizeY)
 
 local navigatorActive = (not term.isColor())
 
@@ -63,7 +141,7 @@ UIs.mainScreen:setBackgroundImage(UIs.mainScreen:getShapeSprite(colors.black,nil
 local function checkNeededStuff()
     if type(UIs.mainScreen.sprite) ~= "table" then error("incorrect type for 'UIs.mainScreen.sprite' is type: "..type(UIs.mainScreen.sprite).." should be table") end
     if type(MainScreenElements) ~= "table" then error("incorrect type for 'MainScreenElements' is type: "..type(MainScreenElements).." should be table") end
-    if type(screenELements) ~= "table" then error("incorrect type for 'screenELements' is type: "..type(screenELements).." should be table") end
+    if type(screenElements) ~= "table" then error("incorrect type for 'screenElements' is type: "..type(screenElements).." should be table") end
     fileTextDisplay:changeHologramData("")
     dirTextDisplay:changeHologramData("")
 
@@ -214,7 +292,7 @@ local function setupScreen()
     local addElements = true
     local startX, startY, offsetX, offsetY = 1, 1, 1, 1
     while addElements do
-        table.insert(screenELements,MainScreenElements:new(startX+offsetX,startY+offsetY))
+        table.insert(screenElements,MainScreenElements:new(startX+offsetX,startY+offsetY))
         if startX+offsetX+5 >= sizeX and not (startY+offsetY+5 >= sizeY) then
             offsetY = offsetY + 4
             offsetX = startX
@@ -227,13 +305,15 @@ local function setupScreen()
     end
 end
 
+
 local function setLogos(dir,isRefreshLoop)
-    for i=1,#screenELements do
-        screenELements[i]:resetLogo()
+    for i=1,#screenElements do
+        screenElements[i]:resetLogo()
     end
 
     local fileList = fs.list(dir)
 
+    --Pre-Processing
     local offset = 0
     for i=1,#fileList do
         i= i - offset
@@ -254,20 +334,36 @@ local function setLogos(dir,isRefreshLoop)
         end
     end
 
+    local j=1
+    local list = {{}}
     for i=1,#fileList do
-        if screenELements[i] then
+        if #list[j] > #screenElements then
+            j=j+1
+            list[j]={}
+        end
+        table.insert(list[j],fileList[i])
+    end
+    if not isRefreshLoop then
+        taskBarState.text[sizeX-2] = #list
+        taskBar:changeHologramData(makeTaskBar())
+    end
+
+    maxPage = #list
+
+    for i=1,#screenElements do
+        if list[currentPage][i] then
             if #dir > 0 then
-                screenELements[i]:setLogo(dir.."/"..fileList[i])
-                screenELements[i].name = fileList[i]
+                screenElements[i]:setLogo(dir.."/"..list[currentPage][i])
+                screenElements[i].name = list[currentPage][i]
             else
-                screenELements[i]:setLogo(fileList[i])
-                screenELements[i].name = fileList[i]
+                screenElements[i]:setLogo(list[currentPage][i])
+                screenElements[i].name = list[currentPage][i]
             end
-            if screenELements[i].type == "folder" then
-                if fs.exists(screenELements[i].dir.."/executable.lua") then
-                    local displayName, displayColorTable = screenELements[i].name:sub(1,2), {{colors.white,1}}
-                    if fs.exists(screenELements[i].dir.."/title.json") then
-                        local temp = io.open(screenELements[i].dir.."/title.json","r")
+            if screenElements[i].type == "folder" then
+                if fs.exists(screenElements[i].dir.."/executable.lua") then
+                    local displayName, displayColorTable = screenElements[i].name:sub(1,2), {{colors.white,1}}
+                    if fs.exists(screenElements[i].dir.."/title.json") then
+                        local temp = io.open(screenElements[i].dir.."/title.json","r")
                         local content = temp:read("a")
                         temp:close()
 
@@ -286,11 +382,11 @@ local function setLogos(dir,isRefreshLoop)
 
                     table.insert(displayColorTable,{colors.red,3})
 
-                    screenELements[i].hologram:changeHologramData(displayName.."e",displayColorTable)
+                    screenElements[i].hologram:changeHologramData(displayName.."e",displayColorTable)
                 else
-                    local displayName, displayColorTable = screenELements[i].name:sub(1,3), {{colors.green,1}}
-                    if fs.exists(screenELements[i].dir.."/title.json") then
-                        local temp = io.open(screenELements[i].dir.."/title.json","r")
+                    local displayName, displayColorTable = screenElements[i].name:sub(1,3), {{colors.green,1}}
+                    if fs.exists(screenElements[i].dir.."/title.json") then
+                        local temp = io.open(screenElements[i].dir.."/title.json","r")
                         local content = temp:read("a")
                         temp:close()
 
@@ -306,22 +402,26 @@ local function setLogos(dir,isRefreshLoop)
                             end
                         end
                     end
-                    screenELements[i].hologram:changeHologramData(displayName,displayColorTable)
+                    screenElements[i].hologram:changeHologramData(displayName,displayColorTable)
                 end
-            elseif screenELements[i].type == "pic" then
-                screenELements[i].hologram:changeHologramData(screenELements[i].name:sub(1,2)..screenELements[i].name:sub(-1),{{colors.white,1},{colors.magenta,3}})
-            elseif screenELements[i].type == "music" then
-                screenELements[i].hologram:changeHologramData(screenELements[i].name:sub(1,2)..screenELements[i].name:sub(-1),{{colors.white,1},{colors.yellow,3}})
+            elseif screenElements[i].type == "pic" then
+                screenElements[i].hologram:changeHologramData(screenElements[i].name:sub(1,2)..screenElements[i].name:sub(-1),{{colors.white,1},{colors.magenta,3}})
+            elseif screenElements[i].type == "music" then
+                screenElements[i].hologram:changeHologramData(screenElements[i].name:sub(1,2)..screenElements[i].name:sub(-1),{{colors.white,1},{colors.yellow,3}})
             else
-                screenELements[i].hologram:changeHologramData(screenELements[i].name:sub(1,2)..screenELements[i].name:sub(-1),{{colors.white,1},{colors.lightGray,3}})
+                screenElements[i].hologram:changeHologramData(screenElements[i].name:sub(1,2)..screenElements[i].name:sub(-1),{{colors.white,1},{colors.lightGray,3}})
 
-                if screenELements[i].name:sub(-4) == ".lua" then
-                    screenELements[i].hologram:changeHologramData(screenELements[i].name:sub(1,2).."l",{{colors.white,1},{colors.blue,3}})
+                if screenElements[i].name:sub(-4) == ".lua" then
+                    screenElements[i].hologram:changeHologramData(screenElements[i].name:sub(1,2).."l",{{colors.white,1},{colors.blue,3}})
                 end
             end
         end
     end
-    if not isRefreshLoop then fileTextDisplay:changeHologramData("",nil,nil,1,1) end
+    if not isRefreshLoop then
+        fileTextDisplay:changeHologramData("",nil,nil,1,1)
+        taskBar:changeHologramData(resetTaskBar(),ColorTaskBar(),ColorTaskBar(true)) 
+        taskBarState.state=nil
+    end
 
     if #dir > sizeX and not isRefreshLoop then
         dirTextDisplay:changeHologramData("..."..dir:sub(#dir - (sizeX-4),#dir).."/",{{colors.white,1}})
@@ -331,6 +431,7 @@ local function setLogos(dir,isRefreshLoop)
         dirTextDisplay:changeHologramData("",{{colors.white,1}})
     end
 
+    term.setCursorBlink(false)
     UIs.mainScreen:render()
 end
 
@@ -344,10 +445,10 @@ end
 local function showErrorMessage(message, elementNum)
     message = tostring(message)
     local eraseLen = 0
-    if #screenELements[elementNum].name > #message then
-        eraseLen = #screenELements[elementNum].name - #message
+    if #screenElements[elementNum].name > #message then
+        eraseLen = #screenElements[elementNum].name - #message
     end
-    fileTextDisplay:changeHologramData(string.rep(" ",math.ceil(eraseLen/2))..message..string.rep(" ",math.ceil(eraseLen/2)),{{colors.red,1}},nil,findCenterFromPoint(screenELements[elementNum].x,screenELements[elementNum].logo,message..string.rep(" ",math.ceil(eraseLen/2))))
+    fileTextDisplay:changeHologramData(string.rep(" ",math.ceil(eraseLen/2))..message..string.rep(" ",math.ceil(eraseLen/2)),{{colors.red,1}},nil,findCenterFromPoint(screenElements[elementNum].x,screenElements[elementNum].logo,message..string.rep(" ",math.ceil(eraseLen/2))))
     fileTextDisplay:render()
     if navigatorActive then sleep(0.1) os.pullEvent("key") else os.pullEvent("mouse_click") end
 end
@@ -459,38 +560,76 @@ end
 
 local navigatorSelected = 1
 local function useNavigator(event)
-    if event[2] == keys.right and navigatorSelected < #screenELements then
-        if screenELements[navigatorSelected+1].dir then
+    if event[2] == keys.right and navigatorSelected < #screenElements then
+        if screenElements[navigatorSelected+1].dir then
             navigatorSelected = navigatorSelected + 1
             event[1] = "mouse_click"
             event[2] = 1
-            event[3] = screenELements[navigatorSelected].x
-            event[4] = screenELements[navigatorSelected].y
+            event[3] = screenElements[navigatorSelected].x
+            event[4] = screenElements[navigatorSelected].y
         end
     elseif event[2] == keys.left and navigatorSelected > 1 then
         navigatorSelected = navigatorSelected - 1
         event[1] = "mouse_click"
         event[2] = 1
-        event[3] = screenELements[navigatorSelected].x
-        event[4] = screenELements[navigatorSelected].y
+        event[3] = screenElements[navigatorSelected].x
+        event[4] = screenElements[navigatorSelected].y
     elseif event[2] == keys.up or event[2] == keys.enter then
         event[1] = "mouse_click"
         event[2] = 1
-        event[3] = screenELements[navigatorSelected].x
-        event[4] = screenELements[navigatorSelected].y
+        event[3] = screenElements[navigatorSelected].x
+        event[4] = screenElements[navigatorSelected].y
     elseif event[2] == keys.down or event[2] == keys.rightShift then
         event[1] = "mouse_click"
         event[2] = 2
-        event[3] = screenELements[navigatorSelected].x
-        event[4] = screenELements[navigatorSelected].y
+        event[3] = screenElements[navigatorSelected].x
+        event[4] = screenElements[navigatorSelected].y
     end
 
     sleep(0.2)
     return event
 end
 
+local function getOrigin(dir)
+    local testString = dir
+    while true do
+        testString = testString:sub(1,#testString-1)
+        if testString:sub(-1) == "/" or #testString == 0 then
+            return testString:sub(1,#testString-1)
+        elseif #dir > 50 then
+            sleep(0.01)
+        end
+    end
+end
 
-local currentShownDir  = ""
+local function getNameWithoutExtension(name)
+    local testString, extension = name, ""
+    while true do
+        extension = testString:sub(-1)..extension
+        testString = testString:sub(1,#testString-1)
+        if #testString == 0 then
+            return name, ""
+        elseif testString:sub(-1) == "." then
+            return testString:sub(1,#testString-1), extension
+        elseif #name > 50 then
+            sleep(0.01)
+        end
+    end
+end
+
+local function renameFile(obj)
+    fileTextDisplay:changeHologramData(string.rep(" ",#obj.name))
+    fileTextDisplay:render()
+    term.setCursorPos(1,fileTextDisplay.y)
+    term.setBackgroundColor(colors.black)
+    term.write(obj.name.." -> ")
+    local newFileName = io.read()
+    newFileName = string.gsub(newFileName,"/","")
+    newFileName = string.gsub(newFileName," ","_")
+    return newFileName
+end
+
+local currentShownDir, terminated  = "", false
 local function runScreen(isSubProcess)
     setLogos("")
     UIs.mainScreen:render()
@@ -499,8 +638,8 @@ local function runScreen(isSubProcess)
     local didAction, startedSubProcess =  false, true
 
     if navigatorActive then
-        selected = screenELements[1]
-        screenELements[1]:isSelected(2,2)
+        selected = screenElements[1]
+        screenElements[1]:isSelected(2,2)
     end
 
     while true do
@@ -513,80 +652,184 @@ local function runScreen(isSubProcess)
 
         if event[1] == "mouse_click" then
             didAction = false
-            for i=1,#screenELements do
-
-                if screenELements[i]:isSelected(event[3],event[4]) and not (selected == screenELements[i]) then
-                    didAction = true
-                    selected = screenELements[i]
-                elseif screenELements[i]:isSelected(event[3],event[4]) and (selected == screenELements[i]) then
-                    didAction = true
-                    if event[2] == 1 then
-                        selected = nil
-                        if screenELements[i].type == "file" then
-                            resetScreen()
-                            execute(screenELements[i].dir)
-                        elseif screenELements[i].type == "folder" then
-                            if fs.exists(screenELements[i].dir.."/executable.lua") then
-                                resetScreen()
-                                execute(screenELements[i].dir.."/executable.lua")
-                            elseif fs.exists(screenELements[i].dir) then
-                                currentShownDir = screenELements[i].dir
-                                if navigatorActive then
-                                    selected = screenELements[1]
-                                    screenELements[1]:isSelected(2,2)
-                                    navigatorSelected = 1
-                                end
+            if (event[3] == sizeX and event[4] == sizeY) and currentPage < maxPage then
+                selected = nil
+                currentPage=currentPage+1
+                setLogos(currentShownDir)
+            elseif (event[3] == sizeX-1 and event[4] == sizeY) and currentPage > 1 then
+                selected = nil
+                currentPage=currentPage-1
+                setLogos(currentShownDir)
+            elseif (event[3] == 7 and event[4] == sizeY) and taskBarState.state == "fileOptions" then
+                openedFile = true
+                dirTextDisplay:changeHologramData("Move "..selected.name.." to where?")
+                local isFirst = true
+                for i=1,#screenElements do
+                    if isFirst and currentShownDir ~= "" and not (screenElements[i].type == "folder" or screenElements[i] == selected) then
+                        screenElements[i]:setLogo(currentShownDir.."/..")
+                        screenElements[i].name = "Previous Directory"
+                        screenElements[i].hologram:changeHologramData("..",{{colors.green,1}})
+                        isFirst = false
+                    elseif not (screenElements[i].type == "folder" or screenElements[i] == selected) then
+                        screenElements[i]:resetLogo()
+                    end
+                end
+                resetTaskBar()
+                taskBarState.text[7]="["
+                taskBarState.text[8]="B"
+                taskBarState.text[9]="]"
+                taskBarState.text[10]="B"
+                taskBarState.text[11]="a"
+                taskBarState.text[12]="c"
+                taskBarState.text[13]="k"
+                taskBar:changeHologramData(makeTaskBar(),ColorTaskBar(false,{{colors.red,7},{colors.white,14}}),ColorTaskBar(true))
+                UIs.mainScreen:render()
+                local fileName, directoryName =selected.name, nil
+                local internalEvent, moved = {}, false
+                while (not (internalEvent[1]=="key" and (internalEvent[2]==keys.b or internalEvent[2]==keys.backspace)) and not (internalEvent[1]=="mouse_click" and ((internalEvent[3]>=7 or internalEvent[3]<=14) and internalEvent[4]==sizeY)) and not moved ) do
+                    internalEvent = {os.pullEvent()}
+                    if type(internalEvent[3])=="number" and type(internalEvent[4])=="number" then
+                        for i=1,#screenElements do
+                            if screenElements[i] ~= selected and screenElements[i].dir and screenElements[i]:isSelected(internalEvent[3],internalEvent[4]) then
+                                directoryName = screenElements[i].name
+                                fs.delete(screenElements[i].dir.."/"..selected.name)
+                                fs.move(selected.dir,screenElements[i].dir.."/"..selected.name)
+                                setLogos(currentShownDir)
+                                dirTextDisplay:changeHologramData("Moved "..fileName.." to "..directoryName)
+                                dirTextDisplay:render()
+                                moved = true
                             end
-                        elseif screenELements[i].type == "pic" and term.isColor() then
-                            resetScreen()
-                            execute("paint",screenELements[i].dir)
-                        elseif screenELements[i].type == "pic" and not term.isColor() then
-                            showErrorMessage("Can't use paint!",i)
-                        elseif screenELements[i].type == "music" then
-                            if peripheral.find("speaker") then
-                                parallel.waitForAll(function () runScreen(true) end,function ()
-                                    startedSubProcess = true
-                                    AudioDataBroker(screenELements[i].dir,i)
-                                end)
-                            else
-                                showErrorMessage("No Speaker Attached!", i)
-                            end
-                        end
-                    elseif event[2] == 2 then
-                        selected = nil
-                        if screenELements[i].type == "folder" then
-                            currentShownDir = screenELements[i].dir
-                        else
-                            execute("edit",screenELements[i].dir)
                         end
                     end
-                    term.setCursorBlink(false)
-                    setLogos(currentShownDir)
+                end
+                selected = nil
+                taskBarState.state = nil
+            elseif (event[3] == 9 and event[4] == sizeY) and taskBarState.state == "fileOptions" then
+                openedFile = true
+                local oldFileName = selected.name
+                local newFileName
+                taskBar:changeHologramData(resetTaskBar(),nil,ColorTaskBar(true))
+                taskBar:render()
+                parallel.waitForAny(function ()
+                    newFileName = renameFile(selected)
+                end,function ()
+                    local internalEvent = {}
+                    while not (internalEvent[1] == "mouse_click" and internalEvent[4] ~= fileTextDisplay.y) do
+                        internalEvent = {os.pullEvent()}
+                    end
+                    newFileName = ""
+                end)
+                if #newFileName ~= 0 then
+                    newFileName = getOrigin(selected.dir)..newFileName
+                    if selected.dir ~= newFileName and fs.exists(newFileName) then
+                        local suffix = 1
+                        while fs.exists(newFileName.."-"..suffix) do
+                            suffix = suffix + 1
+                        end
+                        newFileName = newFileName.."-"..suffix
+                    end
+                    fs.move(selected.dir,newFileName)
+                end
+                openedFile = false
+                selected = nil
+                taskBarState.state = nil
+                setLogos(currentShownDir)
+            elseif (event[3] == 11 and event[4] == sizeY) and taskBarState.state == "fileOptions" then
+                local newFileName, extension = getNameWithoutExtension(selected.dir)
+                if fs.exists(newFileName.."-copy".."."..extension) then
+                    local suffix = 1
+                    while fs.exists(newFileName.."-copy".."."..extension) do
+                        suffix = suffix + 1
+                    end
+                    newFileName = newFileName.."-copy"..suffix.."."..extension
+                else
+                    newFileName = newFileName.."-copy".."."..extension
+                end
+                fs.copy(selected.dir,newFileName)
+                selected = nil
+                taskBarState.state = nil
+                setLogos(currentShownDir)
+            elseif (event[3]== 13 and event[4] == sizeY) and taskBarState.state == "fileOptions" then
+                fs.delete(selected.dir)
+                selected = nil
+                taskBarState.state = nil
+                setLogos(currentShownDir)
+                sleep(0.2)
+            else
+                for i=1,#screenElements do
+
+                    if screenElements[i]:isSelected(event[3],event[4]) and not (selected == screenElements[i]) then
+                        didAction = true
+                        taskBarState.state="fileOptions"
+                        taskBarState.text[7]="M"
+                        taskBarState.text[9]="R"
+                        taskBarState.text[11] = "C"
+                        taskBarState.text[13] = "D"
+                        taskBar:changeHologramData(makeTaskBar(),nil,ColorTaskBar(true,{{colors.darkGray,7},{colors.red,13},{colors.lightGray,14}}))
+                        taskBar:render()
+                        selected = screenElements[i]
+                    elseif screenElements[i]:isSelected(event[3],event[4]) and (selected == screenElements[i]) then
+                        didAction = true
+                        if event[2] == 1 then
+                            selected = nil
+                            if screenElements[i].type == "file" then
+                                resetScreen()
+                                execute(screenElements[i].dir)
+                            elseif screenElements[i].type == "folder" then
+                                if fs.exists(screenElements[i].dir.."/executable.lua") then
+                                    resetScreen()
+                                    execute(screenElements[i].dir.."/executable.lua")
+                                elseif fs.exists(screenElements[i].dir) then
+                                    currentShownDir = screenElements[i].dir
+                                    if navigatorActive then
+                                        selected = screenElements[1]
+                                        screenElements[1]:isSelected(2,2)
+                                        navigatorSelected = 1
+                                    end
+                                end
+                            elseif screenElements[i].type == "pic" and term.isColor() then
+                                resetScreen()
+                                execute("paint",screenElements[i].dir)
+                            elseif screenElements[i].type == "pic" and not term.isColor() then
+                                showErrorMessage("Can't use paint!",i)
+                            elseif screenElements[i].type == "music" then
+                                if peripheral.find("speaker") then
+                                    parallel.waitForAll(function () runScreen(true) end,function ()
+                                        startedSubProcess = true
+                                        AudioDataBroker(screenElements[i].dir,i)
+                                    end)
+                                else
+                                    showErrorMessage("No Speaker Attached!", i)
+                                end
+                            end
+                        elseif event[2] == 2 then
+                            selected = nil
+                            if screenElements[i].type == "folder" then
+                                currentShownDir = screenElements[i].dir
+                            else
+                                execute("edit",screenElements[i].dir)
+                            end
+                        end
+                        setLogos(currentShownDir)
+                    end
                 end
             end
         elseif event[1] == "key" or event[1] == "key_up" then
             if currentShownDir ~= "" and event[2] == keys.left then
                 if navigatorActive then
-                    selected = screenELements[1]
-                    screenELements[1]:isSelected(2,2)
+                    selected = screenElements[1]
+                    screenElements[1]:isSelected(2,2)
                     navigatorSelected = 1
                 else
                     selected = nil
                 end
-                local testString, traceBack = currentShownDir, true
-                while traceBack do
-                    testString = testString:sub(1,#testString-1)
-                    if testString:sub(-1) == "/" or #testString == 0 then
-                        traceBack = false
-                        currentShownDir = testString:sub(1,#testString-1)
-                    elseif #currentShownDir > 50 then
-                        sleep(0.01)
-                    end
-                    setLogos(currentShownDir)
-                end
+                currentShownDir = getOrigin(currentShownDir)
+                currentPage = 1
+                setLogos(currentShownDir)
             elseif event[2] == keys.zero then
                 os.shutdown()
             elseif event[2] == keys.numPadEnter then
+                terminated = true
                 return
             elseif event[2] == keys.q then
                 stopAudio = true
@@ -607,28 +850,21 @@ local function runScreen(isSubProcess)
         end
         if selected and not didAction then
             selected = nil
-
+            taskBar:changeHologramData(resetTaskBar(),ColorTaskBar(),ColorTaskBar(true))
+            taskBarState.state=nil
             fileTextDisplay:changeHologramData("",nil,nil,1,1)
             UIs.mainScreen:render()
         elseif not didAction and event[1] == "mouse_click" and event[2] == 2 and currentShownDir ~= "" then
             if navigatorActive then
-                selected = screenELements[1]
-                screenELements[1]:isSelected(2,2)
+                selected = screenElements[1]
+                screenElements[1]:isSelected(2,2)
                 navigatorSelected = 1
             else
                 selected = nil
             end
-            local testString, traceBack = currentShownDir, true
-            while traceBack do
-                testString = testString:sub(1,#testString-1)
-                if testString:sub(-1) == "/" or #testString == 0 then
-                    traceBack = false
-                    currentShownDir = testString:sub(1,#testString-1)
-                elseif #currentShownDir > 50 then
-                    sleep(0.01)
-                end
-                setLogos(currentShownDir)
-            end
+            currentShownDir = getOrigin(currentShownDir)
+            currentPage = 1
+            setLogos(currentShownDir)
         end
         sleep(0.1)
         if fs.exists(".error.txt") then fs.delete(".error.txt") end
@@ -645,9 +881,12 @@ local function updateDesktop()
 end
 setupScreen()
 
+
 xpcall(parallel.waitForAny(runScreen,updateDesktop),function (err)
-    printError("Error: "..err)
-    sleep(2)
+    if not (string.find(err,"attempt to call a number value",nil,true) and terminated) then
+        printError("Error: "..err)
+        sleep(2)
+    end
 end)
 local temp = io.open(".terminate.txt","w")
 temp:close()
