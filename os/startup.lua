@@ -187,7 +187,14 @@ else
         printError("graphicLib.lua Is Missing or Brocken -> mainScreen.lua failed")
         cope()
     end)
-    xpcall(function() local result = shell.run("system/ROSLibs/ROSMainScreen.lua") if not result then error("something went wrong whilst running the desktop") end end, function (returnedError)
+    xpcall(function() local result = shell.run("system/ROSLibs/ROSMainScreen.lua")
+        if not result then error("something went wrong whilst running the desktop")
+        else
+            print("You're now outside of the RedOS and are using CraftOS (built-in)")
+            print()
+            print("enter 'reboot' or restart the computer to restart RedOS")
+        end
+    end, function (returnedError)
         if not fs.exists(".terminate.txt") then
             printError("ERROR: "..returnedError)
         else
