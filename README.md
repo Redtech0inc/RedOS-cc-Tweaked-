@@ -9,7 +9,7 @@ The file you'll get from this [download link](https://pinestore.cc/projects/191/
 this has to do with the fact that the RedOS normally is a in-game installer meaning it installs from a floppy disk
 so to get the file on there I made a  Pre-Installer which is the paste you're fetching here once it's on the floppy disk you can reuse said Disk to install it anywhere<br>
 <br>
-but Remember any sort of feedback can help<br>
+but Remember any sort of feedback (in comments onm pinestore or as issue on the github) can help<br>
 I also accept suggestions for future additions<br>
 keep in mind to not suggest features that are already teased or in the OS it's self (shown below)
 
