@@ -5,7 +5,7 @@ This is the Alpha Version of the RedOS<br>
 I made this early version accessible to get feedback from actual users<br>
 this is a system I developed for a youtube series which i did. You can prob. find it when searching RedOS (don't want to promo that much) I'am small and want to do what I love <b>Coding</b> so if you want check it out<br>
 <br>
-The file you'll get from this download link is not the actual installer
+The file you'll get from this [download link](https://pinestore.cc/projects/191/redos-file-system-) is not the actual installer
 this has to do with the fact that the RedOS normally is a in-game installer meaning it installs from a floppy disk
 so to get the file on there I made a  Pre-Installer which is the paste you're fetching here once it's on the floppy disk you can reuse said Disk to install it anywhere<br>
 <br>
