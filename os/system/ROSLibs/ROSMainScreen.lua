@@ -626,6 +626,9 @@ local function renameFile(obj)
     local newFileName = io.read()
     newFileName = string.gsub(newFileName,"/","")
     newFileName = string.gsub(newFileName," ","_")
+    if newFileName:sub(1,1) == "." then
+        newFileName = newFileName:sub(2,#newFileName)
+    end
     return newFileName
 end
 
