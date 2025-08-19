@@ -130,11 +130,11 @@ end
 
 local defaultLogos, defaultLogosLen = {}, 5
 defaultLogos[0] = makeCheckerPattern(3,3,colors.gray,colors.magenta)
-table.insert(defaultLogos,loadImage("system/ROSPics/fileLogos/folder.nfp"))
-table.insert(defaultLogos,loadImage("system/ROSPics/fileLogos/exe.nfp"))
-table.insert(defaultLogos,loadImage("system/ROSPics/fileLogos/pic.nfp"))
-table.insert(defaultLogos,loadImage("system/ROSPics/fileLogos/file.nfp"))
-table.insert(defaultLogos,loadImage("system/ROSPics/fileLogos/music.nfp"))
+table.insert(defaultLogos,loadImage("system/ROSPics/fileLogos/folder.nfp")) --1 folder
+table.insert(defaultLogos,loadImage("system/ROSPics/fileLogos/exe.nfp")) --2 exe
+table.insert(defaultLogos,loadImage("system/ROSPics/fileLogos/pic.nfp")) --3 pic
+table.insert(defaultLogos,loadImage("system/ROSPics/fileLogos/file.nfp")) --4 file
+table.insert(defaultLogos,loadImage("system/ROSPics/fileLogos/music.nfp")) --5 music
 
 UIs.mainScreen:setBackgroundImage(UIs.mainScreen:getShapeSprite(colors.black,nil,sizeX,sizeY))
 
@@ -629,9 +629,15 @@ local function renameFile(obj)
     return newFileName
 end
 
+local function changeTaskBarTextToString(startPos,text)
+    for i=1,#text do
+        taskBarState.text[startPos+(i-1)] = text:sub(i,i)
+    end
+end
+
 local currentShownDir, terminated  = "", false
 local function runScreen(isSubProcess)
-    setLogos("")
+    setLogos(currentShownDir)
     UIs.mainScreen:render()
 
     local selected
@@ -660,6 +666,91 @@ local function runScreen(isSubProcess)
                 selected = nil
                 currentPage=currentPage-1
                 setLogos(currentShownDir)
+            elseif event[3] == sizeX-6 and event[4] == sizeY then
+                openedFile = true
+                taskBarState.state = nil
+                resetTaskBar()
+                changeTaskBarTextToString(6,"[E]Exit")
+                changeTaskBarTextToString(13,"[F]+File")
+                changeTaskBarTextToString(21,"[O]+Dir")
+                taskBar:changeHologramData(makeTaskBar(),ColorTaskBar(false,{{colors.red,6},{colors.white,13},{colors.green,21},{colors.white,28}}),ColorTaskBar(true))
+                for i=1,#screenElements do
+                    screenElements[i]:resetLogo()
+                end
+                fileTextDisplay:changeHologramData("")
+                UIs.mainScreen:render()
+                local addType, waitForInput = nil, true
+                while waitForInput do
+                    local internalEvent = {os.pullEvent()}
+                    if internalEvent[1] == "key" or internalEvent[1] == "mouse_click" then
+                        if (internalEvent[1]=="key" and internalEvent[2]==keys.f) or (internalEvent[1]=="mouse_click" and internalEvent[4]==sizeY and (internalEvent[3]>=13 and internalEvent[3]<=19)) then
+                            waitForInput = false
+                            addType = "file"
+                        elseif (internalEvent[1]=="key" and internalEvent[2]==keys.o) or (internalEvent[1]=="mouse_click" and internalEvent[4]==sizeY and (internalEvent[3]>=21 and internalEvent[3]<=27)) then
+                            waitForInput = false
+                            addType = "folder"
+                        elseif (internalEvent[1]=="key" and internalEvent[2]==keys.e) or (internalEvent[1]=="mouse_click" and internalEvent[4]==sizeY and (internalEvent[3]>=6 and internalEvent[3]<=12)) then
+                            waitForInput = false
+                        end
+                    end
+                    sleep(0.1)
+                end
+                if addType == "file" then
+                    screenElements[1].logo = defaultLogos[4]
+                    screenElements[1].sprite:changeSpriteData(defaultLogos[4])
+                elseif addType == "folder" then
+                    screenElements[1].logo = defaultLogos[1]
+                    screenElements[1].sprite:changeSpriteData(defaultLogos[1])
+                end
+                local fileName
+                if addType then
+                    UIs.mainScreen:render()
+                    term.setCursorPos(1,screenElements[1].y+3)
+                    term.setBackgroundColor(colors.black)
+                    term.setTextColor(colors.white)
+                    term.write("Name:")
+                    parallel.waitForAny(function ()
+                        fileName = io.read()
+                    end,function ()
+                        local internalEvent = {}
+                        while not (internalEvent[1] == "mouse_click" and internalEvent[4] ~= 5) do
+                            internalEvent = {os.pullEvent()}
+                        end
+                        fileName = ""
+                    end)
+                    fileName = string.gsub(fileName,"/","")
+                    fileName = string.gsub(fileName," ","_")
+                end
+                if addType and #fileName > 0 and fileName ~= "ROSLibs" then
+                    local preDir = currentShownDir
+                    if preDir ~= "" then
+                        preDir = preDir.."/"
+                    end
+                    if addType == "file" then
+                        if fs.exists(preDir..fileName) then
+                            local suffix = 1
+                            local name, extension = getNameWithoutExtension(fileName)
+                            while fs.exists(preDir..name.."-"..suffix.."."..extension) do
+                                suffix = suffix + 1
+                            end
+                            fileName = name.."-"..suffix.."."..extension
+                        end
+                        local temp = io.open(preDir..fileName,"w")
+                        temp:close()
+                    elseif addType == "folder" then
+                        if fs.exists(preDir..fileName) then
+                            local suffix = 1
+                            while fs.exists(preDir..fileName.."-"..suffix) do
+                                suffix = suffix + 1
+                            end
+                            fileName = fileName.."-"..suffix
+                        end
+                        fs.makeDir(preDir..fileName)
+                    end
+                end
+                setLogos(currentShownDir)
+                openedFile = false
+                selected = nil
             elseif (event[3] == 7 and event[4] == sizeY) and taskBarState.state == "fileOptions" then
                 openedFile = true
                 dirTextDisplay:changeHologramData("Move "..selected.name.." to where?")
@@ -675,20 +766,16 @@ local function runScreen(isSubProcess)
                     end
                 end
                 resetTaskBar()
-                taskBarState.text[7]="["
-                taskBarState.text[8]="B"
-                taskBarState.text[9]="]"
-                taskBarState.text[10]="B"
-                taskBarState.text[11]="a"
-                taskBarState.text[12]="c"
-                taskBarState.text[13]="k"
+                changeTaskBarTextToString(7,"[B]Back")
                 taskBar:changeHologramData(makeTaskBar(),ColorTaskBar(false,{{colors.red,7},{colors.white,14}}),ColorTaskBar(true))
                 UIs.mainScreen:render()
                 local fileName, directoryName =selected.name, nil
                 local internalEvent, moved = {}, false
-                while (not (internalEvent[1]=="key" and (internalEvent[2]==keys.b or internalEvent[2]==keys.backspace)) and not (internalEvent[1]=="mouse_click" and ((internalEvent[3]>=7 or internalEvent[3]<=14) and internalEvent[4]==sizeY)) and not moved ) do
+                while  not moved do
                     internalEvent = {os.pullEvent()}
-                    if type(internalEvent[3])=="number" and type(internalEvent[4])=="number" then
+                    if (internalEvent[1]=="key" and (internalEvent[2]==keys.b or internalEvent[2]==keys.backspace)) or (internalEvent[1]=="mouse_click" and internalEvent[4]==sizeY and (internalEvent[3]>=7 and internalEvent[3]<=13)) then
+                        moved =  true
+                    elseif type(internalEvent[3])=="number" and type(internalEvent[4])=="number" then
                         for i=1,#screenElements do
                             if screenElements[i] ~= selected and screenElements[i].dir and screenElements[i]:isSelected(internalEvent[3],internalEvent[4]) then
                                 directoryName = screenElements[i].name
@@ -702,11 +789,11 @@ local function runScreen(isSubProcess)
                         end
                     end
                 end
+                setLogos(currentShownDir)
                 selected = nil
                 taskBarState.state = nil
             elseif (event[3] == 9 and event[4] == sizeY) and taskBarState.state == "fileOptions" then
                 openedFile = true
-                local oldFileName = selected.name
                 local newFileName
                 taskBar:changeHologramData(resetTaskBar(),nil,ColorTaskBar(true))
                 taskBar:render()
@@ -720,7 +807,7 @@ local function runScreen(isSubProcess)
                     newFileName = ""
                 end)
                 if #newFileName ~= 0 then
-                    newFileName = getOrigin(selected.dir)..newFileName
+                    newFileName = getOrigin(selected.dir).."/"..newFileName
                     if selected.dir ~= newFileName and fs.exists(newFileName) then
                         local suffix = 1
                         while fs.exists(newFileName.."-"..suffix) do
@@ -794,10 +881,10 @@ local function runScreen(isSubProcess)
                                 showErrorMessage("Can't use paint!",i)
                             elseif screenElements[i].type == "music" then
                                 if peripheral.find("speaker") then
-                                    parallel.waitForAll(function () runScreen(true) end,function ()
+                                    parallel.waitForAll(function ()
                                         startedSubProcess = true
                                         AudioDataBroker(screenElements[i].dir,i)
-                                    end)
+                                    end,function () runScreen(true) end)
                                 else
                                     showErrorMessage("No Speaker Attached!", i)
                                 end
