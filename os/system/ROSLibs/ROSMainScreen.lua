@@ -720,6 +720,9 @@ local function runScreen(isSubProcess)
                     end)
                     fileName = string.gsub(fileName,"/","")
                     fileName = string.gsub(fileName," ","_")
+                    if fileName:sub(1,1) == "." then
+                        fileName = fileName:sub(2,#fileName)
+                    end
                 end
                 if addType and #fileName > 0 and fileName ~= "ROSLibs" then
                     local preDir = currentShownDir
