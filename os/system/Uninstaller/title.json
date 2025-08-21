@@ -1,5 +1,6 @@
 {
-    "name":"UIN",
+    "label":"UIN",
+    "name":"ROSUninstaller",
     "color":[
         [
             "red",
