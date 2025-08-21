@@ -369,7 +369,8 @@ local function setLogos(dir,isRefreshLoop)
 
                         local jsonTable = textutils.unserialiseJSON(content)
                         if type(jsonTable) == "table" then
-                            if type(jsonTable.name) == "string" then displayName = jsonTable.name:sub(1,2) end
+                            if type(jsonTable.label) == "string" then displayName = jsonTable.label:sub(1,2) end
+                            if type(jsonTable.name) == "string" then screenElements[i].name = jsonTable.name end
                             if type(jsonTable.color) == "table" then
                                 for i=1,#jsonTable.color do
                                     if type(jsonTable.color[i]) == "table" and colors[jsonTable.color[i][1]] then
@@ -392,7 +393,8 @@ local function setLogos(dir,isRefreshLoop)
 
                         local jsonTable = textutils.unserialiseJSON(content)
                         if type(jsonTable) == "table" then
-                            if type(jsonTable.name) == "string" then displayName = jsonTable.name:sub(1,3) end
+                            if type(jsonTable.label) == "string" then displayName = jsonTable.label:sub(1,3) end
+                            if type(jsonTable.name) == "string" then screenElements[i].name = jsonTable.name end
                             if type(jsonTable.color) == "table" then
                                 for i=1,#jsonTable.color do
                                     if type(jsonTable.color[i]) == "table" and colors[jsonTable.color[i][1]] then
