@@ -38,7 +38,7 @@ Don't look at this if you want to get surprised!
 ### File System
 <li>Folder as "EXE" by putting executable.lua in it
 <li>Changing a folder's icon by putting an icon.nfp in it (if .nfp is set as paint.default_extension)
-<li>Changing the 2 (3 for folders) file name preview letters via a title.json (can be found in Console (displayed as Console.exe) folder)
+<li>Changing the 2 (3 for folders) file name preview letters via a title.json (can be found in system/Uninstaller (displayed as ROSUninstaller.exe) folder)
 <li>execute lua files by left clicking on them
 <li>using paint on .nfp by left clicking on them (if .nfp is set as paint.default_extension) if you're on an advanced computer or above
 <li>playing dfpwm (music for ccTweaked) files by left clicking on them (if your version is high enough)
@@ -54,4 +54,5 @@ Don't look at this if you want to get surprised!
 
 # enjoy
 <b>just have a look at it and go nuts with whats possible and have fun doing it</b>
+
 
