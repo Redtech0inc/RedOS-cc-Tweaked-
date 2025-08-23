@@ -14,7 +14,6 @@ I also accept suggestions for future additions<br>
 keep in mind to not suggest features that are already teased or in the OS it's self (shown below)
 
 ## Teased Features
-<li>MOST IMPORTANT: full support for basic computers
 <li>RuntimeLogs
 <li>sandbox-ing of executed files
 <li>users (maybe)
@@ -54,5 +53,6 @@ Don't look at this if you want to get surprised!
 
 # enjoy
 <b>just have a look at it and go nuts with whats possible and have fun doing it</b>
+
 
 
