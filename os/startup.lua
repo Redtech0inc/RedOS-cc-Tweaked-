@@ -192,7 +192,7 @@ else
         else
             print("You're now outside of the RedOS and are using CraftOS (built-in)")
             print()
-            print("enter 'reboot' or restart the computer to restart RedOS")
+            print("enter 'startup' or restart the computer to restart RedOS")
         end
     end, function (returnedError)
         if not fs.exists(".terminate.txt") then
@@ -200,7 +200,7 @@ else
         else
             print("You're now outside of the RedOS and are using CraftOS (built-in)")
             print()
-            print("enter 'reboot' or restart the computer to restart RedOS")
+            print("enter 'startup' or restart the computer to restart RedOS")
         end
         if fs.exists(".error.txt") then
             cope()
