@@ -68,24 +68,6 @@ local function ColorTaskBar(isBackground,colorTable)
     return colorScheme
 end
 
-local function removeItemFromTable(tableIn,item)
-    if not item or type(tableIn) ~= "table" then return tableIn end
-    for i=1,#tableIn do
-        if item == tableIn[i] then
-            table.remove(tableIn,i)
-        end
-    end
-    return tableIn
-end
-
-local function doesTableContainItem(tableIn,item)
-    if not item or type(tableIn) ~= "table" then return false end
-    for i=1,#tableIn do
-        if item == tableIn[i] then return true end
-    end
-    return false
-end
-
 local fileTextDisplay = UIs.mainScreen.hologram:addHologram("",nil,nil,nil,1,1,false,nil,true)
 local dirTextDisplay = UIs.mainScreen.hologram:addHologram("",nil,nil,nil,1,1,false,false,true)
 local taskBar = UIs.mainScreen.hologram:addHologram(resetTaskBar(),ColorTaskBar(),ColorTaskBar(true),nil,1,sizeY)
@@ -272,6 +254,10 @@ function MainScreenElements:resetLogo()
 end
 
 function  MainScreenElements:isSelected(x,y)
+    if type(x) ~= "number" or type(y) ~= "number" then
+        print(tostring(x),tostring(y))
+        sleep(0.5)
+    end
     if UIs.mainScreen:isCollidingRaw(x,y,self.sprite,true) then
         fileTextDisplay:changeHologramData(self.name,nil,{{colors.black,1}},findCenterFromPoint(self.x,self.logo,self.name),self.y+3,nil,true)
         if self.type == "folder" then
@@ -567,26 +553,49 @@ local function useNavigator(event)
             navigatorSelected = navigatorSelected + 1
             event[1] = "mouse_click"
             event[2] = 1
-            event[3] = screenElements[navigatorSelected].x
-            event[4] = screenElements[navigatorSelected].y
+            event[3] = screenElements[navigatorSelected].x or screenElements[1].x
+            event[4] = screenElements[navigatorSelected].y or screenElements[1].y
         end
     elseif event[2] == keys.left and navigatorSelected > 1 then
         navigatorSelected = navigatorSelected - 1
         event[1] = "mouse_click"
         event[2] = 1
-        event[3] = screenElements[navigatorSelected].x
-        event[4] = screenElements[navigatorSelected].y
+        event[3] = screenElements[navigatorSelected].x or screenElements[1].x
+        event[4] = screenElements[navigatorSelected].y or screenElements[1].y
     elseif event[2] == keys.up or event[2] == keys.enter then
         event[1] = "mouse_click"
         event[2] = 1
-        event[3] = screenElements[navigatorSelected].x
-        event[4] = screenElements[navigatorSelected].y
+        event[3] = screenElements[navigatorSelected].x or screenElements[1].x
+        event[4] = screenElements[navigatorSelected].y or screenElements[1].y
     elseif event[2] == keys.down or event[2] == keys.rightShift then
         event[1] = "mouse_click"
         event[2] = 2
-        event[3] = screenElements[navigatorSelected].x
-        event[4] = screenElements[navigatorSelected].y
+        event[3] = screenElements[navigatorSelected].x or screenElements[1].x
+        event[4] = screenElements[navigatorSelected].y or screenElements[1].y
+    elseif event[2] == keys.m then
+        event[1] = "mouse_click"
+        event[2] = 1
+        event[3] = 7
+        event[4] = sizeY
+    elseif event[2] == keys.r then
+        event[1] = "mouse_click"
+        event[2] = 1
+        event[3] = 9
+        event[4] = sizeY
+    elseif event[2] == keys.c then
+        event[1] = "mouse_click"
+        event[2] = 1
+        event[3] = 11
+        event[4] = sizeY
+    elseif event[2] == keys.d then
+        event[1] = "mouse_click"
+        event[2] = 1
+        event[3] = 13
+        event[4] = sizeY
     end
+    event[2] = event[2] or 1
+    event[3] = event[3] or screenElements[navigatorSelected].x
+    event[4] = event[4] or screenElements[navigatorSelected].y
 
     sleep(0.2)
     return event
@@ -673,7 +682,6 @@ local function runScreen(isSubProcess)
                 setLogos(currentShownDir)
             elseif event[3] == sizeX-6 and event[4] == sizeY then
                 openedFile = true
-                taskBarState.state = nil
                 resetTaskBar()
                 changeTaskBarTextToString(6,"[E]Exit")
                 changeTaskBarTextToString(13,"[F]+File")
@@ -757,6 +765,7 @@ local function runScreen(isSubProcess)
                     end
                 end
                 setLogos(currentShownDir)
+                taskBarState.state = nil
                 openedFile = false
                 selected = nil
             elseif (event[3] == 7 and event[4] == sizeY) and taskBarState.state == "fileOptions" then
@@ -777,12 +786,24 @@ local function runScreen(isSubProcess)
                 changeTaskBarTextToString(7,"[B]Back")
                 taskBar:changeHologramData(makeTaskBar(),ColorTaskBar(false,{{colors.red,7},{colors.white,14}}),ColorTaskBar(true))
                 UIs.mainScreen:render()
-                local fileName, directoryName =selected.name, nil
-                local internalEvent, moved = {}, false
+                local fileName, directoryName =selected.name, nil --file stuff
+                local internalEvent, moved = {}, false -- functional stuff
+                local currentLocation = getOrigin(selected.dir)
                 while  not moved do
                     internalEvent = {os.pullEvent()}
                     if (internalEvent[1]=="key" and (internalEvent[2]==keys.b or internalEvent[2]==keys.backspace)) or (internalEvent[1]=="mouse_click" and internalEvent[4]==sizeY and (internalEvent[3]>=7 and internalEvent[3]<=13)) then
                         moved =  true
+                    elseif navigatorActive or (internalEvent[1] == "key" and internalEvent[2] == keys.tab) then
+                        term.setCursorPos(1,5)
+                        term.setTextColor(colors.white)
+                        term.setBackgroundColor(colors.black)
+                        term.write("move where?:")
+                        local location = io.read() 
+                        if fs.exists(currentLocation.."/"..location) and not fs.isReadOnly(currentLocation.."/"..location) then
+                            moved = true
+                            fs.delete(currentLocation.."/"..location.."/"..selected.name)
+                            fs.move(selected.dir,currentLocation.."/"..location.."/"..selected.name)
+                        end
                     elseif type(internalEvent[3])=="number" and type(internalEvent[4])=="number" then
                         for i=1,#screenElements do
                             if screenElements[i] ~= selected and screenElements[i].dir and screenElements[i]:isSelected(internalEvent[3],internalEvent[4]) then
@@ -949,7 +970,7 @@ local function runScreen(isSubProcess)
             taskBarState.state=nil
             fileTextDisplay:changeHologramData("",nil,nil,1,1)
             UIs.mainScreen:render()
-        elseif not didAction and event[1] == "mouse_click" and event[2] == 2 and currentShownDir ~= "" then
+        elseif not didAction and event[1] == "mouse_click" and event[2] == 2 and currentShownDir ~= "" and (type(event[3])=="number" and type(event[4])=="number") then
             if navigatorActive then
                 selected = screenElements[1]
                 screenElements[1]:isSelected(2,2)
@@ -975,7 +996,6 @@ local function updateDesktop()
     end
 end
 setupScreen()
-
 
 xpcall(parallel.waitForAny(runScreen,updateDesktop),function (err)
     if not (string.find(err,"attempt to call a number value",nil,true) and terminated) then
