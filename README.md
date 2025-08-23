@@ -32,7 +32,7 @@ Don't look at this if you want to get surprised!
 ### Desktop
 <li>Desktop with UI meaning icons for files and folders
 <li>Mouse Desktop navigation(complete) -> Advanced Computer and above only
-<li>Keyboard Desktop navigation(not fully integrated yet!) -> all Computers
+<li>Keyboard Desktop navigation(complete) -> all Computers
 
 ### File System
 <li>Folder as "EXE" by putting executable.lua in it
@@ -53,6 +53,7 @@ Don't look at this if you want to get surprised!
 
 # enjoy
 <b>just have a look at it and go nuts with whats possible and have fun doing it</b>
+
 
 
 
