@@ -168,17 +168,6 @@ local function findCenterFromPoint(x,logo,text)
     return returnValue
 end
 
---[[local function getBiggestIndex(matrix)
-    local maxIndexX, maxIndexY = #matrix,1
-    for i=1,maxIndexX do
-        if maxIndexY < #matrix[i] then
-            maxIndexY = #matrix[i]
-        end
-    end
-
-    return maxIndexX, maxIndexY
-end]]
-
 function MainScreenElements:new(x,y)
     local obj = {}
 
@@ -461,7 +450,7 @@ local function execute(...)
         end
     end
     local endTime = os.clock()
-    if (endTime-startTime) < 1 and result then
+    if (endTime-startTime) < 0.5 and result then
         sleep(0.2)
         term.setCursorPos(1,sizeY)
         term.setBackgroundColor(colors.black)
