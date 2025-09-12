@@ -15,10 +15,9 @@ keep in mind to not suggest features that are already teased or in the OS it's s
 
 ## Teased Features
 <li>RuntimeLogs
-<li>sandbox-ing of executed files
 <li>users (maybe)
 <li>settings
-<li>API (again maybe)
+<li>API Documentation (technically not a feature but coming soon anyways)
 <li>Music Mixer/Music configuration
 <li>Multishell desktop UI support (right now multishell brakes it!)
 <li>folder link / folder alias
@@ -37,7 +36,7 @@ Don't look at this if you want to get surprised!
 ### File System
 <li>Folder as "EXE" by putting executable.lua in it
 <li>Changing a folder's icon by putting an icon.nfp in it (if .nfp is set as paint.default_extension)
-<li>Changing the 2 (3 for folders) file name preview letters via a title.json (can be found in system/Utils/Uninstaller/executable.lua (displayed as ROSUninstaller.exe) folder)
+<li>Changing the 2 (3 for folders) file name preview letters via a title.json (can be found in system/Uninstaller (displayed as ROSUninstaller.exe) folder)
 <li>execute lua files by left clicking on them
 <li>using paint on .nfp by left clicking on them (if .nfp is set as paint.default_extension) if you're on an advanced computer or above
 <li>playing dfpwm (music for ccTweaked) files by left clicking on them (if your version is high enough)
@@ -48,14 +47,9 @@ Don't look at this if you want to get surprised!
 
 ### System
 <li>Console access remains with you
-<li>Uninstaller, can be found in the system directory shown on the desktop or through the console under system/Uninstaller/executable.lua (can only be used if desktop environment has run once upon startup)
+<li>Uninstaller, can be found in the system directory shown on the desktop or through the console under system/Utils/Uninstaller/executable.lua (can only be used if desktop environment has run once upon startup)
+<li> utility APIs can be found under system/APIs (all requiarable on their own or import all using require("system/APIs")) documentation following soon
 <br><br><br><br><br>
 
 # enjoy
 <b>just have a look at it and go nuts with whats possible and have fun doing it</b>
-
-
-
-
-
-
