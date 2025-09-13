@@ -35,11 +35,11 @@ rosAPI.formatting = {
         local posY
 
         if type(roundFunc) == "function" then
-            posX = roundFunc((maxX - sizeX) / 2)
-            posY = roundFunc((maxY - sizeY) / 2)
+            posX = roundFunc((maxX - sizeX) / 2)+1
+            posY = roundFunc((maxY - sizeY) / 2)+1
         else
-            posX = math.floor((maxX - sizeX) / 2)
-            posY = math.floor((maxY - sizeY) / 2)
+            posX = math.floor((maxX - sizeX) / 2)+1
+            posY = math.floor((maxY - sizeY) / 2)+1
         end
 
         return posX, posY
@@ -99,9 +99,9 @@ rosAPI.textutils = {
             local width = width or term.getSize()
 
             if type(roundFunc) == "function" then
-                return roundFunc((width-#text)/2), y
+                return roundFunc((width-#text)/2)+1, y
             else
-                return math.floor((width-#text)/2), y
+                return math.floor((width-#text)/2)+1, y
             end
         end,
 
@@ -186,4 +186,5 @@ rosAPI.getDevice = function ()
     else
         return "computer"
     end
+
 end
