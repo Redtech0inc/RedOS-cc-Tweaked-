@@ -130,7 +130,7 @@ local function useBody(XButton,UButton,confirmButton,cancelButton)
             end
         elseif event[1] == "key" then
             if event[2] == keys.enter and not final then
-                confirmButton:changeHologramData("!Confirm! [Enter]")
+                confirmButton:changeHologramData("\019Confirm\019 [Enter]")
                 cancelButton:changeHologramData("X")
                 UButton:changeHologramData("")
                 sleep(0.2)
@@ -168,4 +168,5 @@ if final then
 end
 UIs.uninstaller:render()
 sleep(0.5)
+
 UIs.uninstaller:quit()
