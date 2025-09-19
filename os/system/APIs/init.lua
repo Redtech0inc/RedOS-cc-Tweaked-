@@ -5,6 +5,6 @@ local list = fs.list("system/APIs")
 for i=1,#list do
     if fs.exists("system/APIs/"..list[i]) and list[i]~= "init.lua" then
         local result = require("system/APIs/"..list[i]:sub(1,-5))
-        if mountPath == "rom/" then print("imported: system/APIs/"..list[i]:sub(1,-5),"status: "..tostring(result)) end
+        if mountPath == "rom/" then print("imported: system/APIs/"..list[i]:sub(1,-5),"status: "..tostring(result)) sleep(0.1) end
     end
 end
