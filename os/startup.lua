@@ -1,3 +1,4 @@
+--[[REDOS-INSTALLER]]
 local mountPath = shell.getRunningProgram()
 local pathDiv = string.find(mountPath,"/",nil,true)
 mountPath = string.sub(mountPath,1,pathDiv)
@@ -45,7 +46,8 @@ _G.ROSFiles = {
         "Console",
         ".error.txt",
         ".terminate.txt",
-        "installerLog.log"
+        "installerLog.log",
+        "RedMail"
     }
 local function cope()
     printError("the desktop setup failed!")
@@ -64,6 +66,10 @@ local function cope()
     term.setBackgroundColor(colors.black)
     term.clear()
     term.setCursorPos(1,1)
+    if ROSSystemLog then
+        ROSSystemLog:close()
+        ROSSystemLog = nil
+    end
 end
 local function makeCheckerPattern(width,height,darkColor, lightColor)
     local background = {}
@@ -87,7 +93,6 @@ local function makeCheckerPattern(width,height,darkColor, lightColor)
     end
     return background
 end
---[[REDOS-INSTALLER]]
 if string.find(mountPath,"disk",nil,true) then
     term.clear()
     term.setCursorPos(1,1)
@@ -104,27 +109,30 @@ if string.find(mountPath,"disk",nil,true) then
         installerLog = io.open("installerLog.log","w")
         if installerLog then installerLog:write("---------------------------START-OF-INSTALLER-LOG---------------------------","\n") end
         local fileList = fs.list(mountPath)
+        local isColor = term.isColor()
         for i=1,#fileList do
-            if fs.isDir(mountPath..fileList[i]) then
-                term.setTextColor(colors.green)
-                print("redirecting to directory: "..mountPath..fileList[i].."/")
-                if installerLog then installerLog:write("redirecting to directory: "..mountPath..fileList[i].."/","\n") end
-                sleep(0.5)
-                recursionDir(fileList[i].."/")
-                if installerLog then installerLog:flush() end
-            else
-                fileAmount = fileAmount + 1
-                fs.delete(fileList[i])
-                fs.copy(mountPath..fileList[i],fileList[i])
-                term.setTextColor(colors.white)
-                term.write("copied: ")
-                term.setTextColor(colors.magenta)
-                term.write(mountPath..fileList[i])
-                term.setTextColor(colors.white)
-                term.write(" to ")
-                term.setTextColor(colors.yellow)
-                print(fileList[i])
-                if installerLog then installerLog:write("copied: "..mountPath..fileList[i].." to "..fileList[i],"\n") end
+            if fileList[i] ~= "RedMail" or isColor then
+                if fs.isDir(mountPath..fileList[i]) then
+                    term.setTextColor(colors.green)
+                    print("redirecting to directory: "..mountPath..fileList[i].."/")
+                    if installerLog then installerLog:write("redirecting to directory: "..mountPath..fileList[i].."/","\n") end
+                    sleep(0.5)
+                    recursionDir(fileList[i].."/")
+                    if installerLog then installerLog:flush() end
+                else
+                    fileAmount = fileAmount + 1
+                    fs.delete(fileList[i])
+                    fs.copy(mountPath..fileList[i],fileList[i])
+                    term.setTextColor(colors.white)
+                    term.write("copied: ")
+                    term.setTextColor(colors.magenta)
+                    term.write(mountPath..fileList[i])
+                    term.setTextColor(colors.white)
+                    term.write(" to ")
+                    term.setTextColor(colors.yellow)
+                    print(fileList[i])
+                    if installerLog then installerLog:write("copied: "..mountPath..fileList[i].." to "..fileList[i],"\n") end
+                end
             end
             sleep(0.1)
         end
@@ -164,9 +172,17 @@ if string.find(mountPath,"disk",nil,true) then
 else
     term.clear()
     term.setCursorPos(1,1)
-    xpcall(function() os.loadAPI("system/ROSLibs/graphicLib.lua")
+    xpcall(function() require("system/ROSLibs/easyLog")
+        _G.ROSSystemLog = easyLog.Log:open("system/Logs/last-system-log.log",function() return os.date("%X") end,true,"system/Logs/last-")
+        if not fs.exists("system/BGScripts") then
+            fs.makeDir("system/BGScripts")
+            ROSSystemLog:write("Created Background Process Folder (system/BGScripts)")
+        end
+        ROSSystemLog:write("Importing graphicLib")
+        os.loadAPI("system/ROSLibs/graphicLib.lua")
         if UIs then os.reboot() end
         _G.UIs = {}
+        ROSSystemLog:write("Initializing startup graphic frame")
         UIs.Startup = graphicLib.Frame:init("RedOS")
         local logo
         if fs.exists("system/ROSPics/ROSLogo.nfp") then
@@ -185,22 +201,28 @@ else
         term.setCursorPos(1,1)
         printError("ERROR: "..returnedError)
         printError("graphicLib.lua Is Missing or Brocken -> mainScreen.lua failed")
+        if ROSSystemLog then
+            ROSSystemLog:write("GraphicLib failed","STARTUP-ERROR",nil,nil,false)
+            ROSSystemLog:write("ERROR: "..returnedError,nil,nil,false)
+        end
         cope()
     end)
     xpcall(function() local result = shell.run("system/ROSLibs/ROSMainScreen.lua")
         if not result then error("something went wrong whilst running the desktop")
-        else
+        elseif fs.exists(".terminate.txt") then
             print("You're now outside of the RedOS and are using CraftOS (built-in)")
             print()
             print("enter 'startup' or restart the computer to restart RedOS")
+            fs.delete(".terminate.txt")
         end
     end, function (returnedError)
         if not fs.exists(".terminate.txt") then
             printError("ERROR: "..returnedError)
-        else
+        elseif fs.exists(".terminate.txt") then
             print("You're now outside of the RedOS and are using CraftOS (built-in)")
             print()
             print("enter 'startup' or restart the computer to restart RedOS")
+            fs.delete(".terminate.txt")
         end
         if fs.exists(".error.txt") then
             cope()
@@ -216,4 +238,5 @@ else
             fs.delete(".terminate.txt")
         end
     end)
+    if ROSSystemLog then ROSSystemLog:close() end
 end
