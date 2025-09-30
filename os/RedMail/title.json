@@ -1,0 +1,14 @@
+{
+    "label":"RM",
+    "name":"RedMail(UNFINISHED)",
+    "color":[
+        [
+            "red",
+            1
+        ],
+        [
+            "lightGray",
+            2
+        ]
+    ]
+}
