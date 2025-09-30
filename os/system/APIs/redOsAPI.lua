@@ -31,8 +31,7 @@ rosAPI.formatting = {
         sizeX = sizeX or 1
         sizeY = sizeY or 1
 
-        local posX
-        local posY
+        local posX, posY
 
         if type(roundFunc) == "function" then
             posX = roundFunc((maxX - sizeX) / 2)+1
@@ -186,5 +185,4 @@ rosAPI.getDevice = function ()
     else
         return "computer"
     end
-
 end
