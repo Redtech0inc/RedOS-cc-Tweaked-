@@ -1,7 +1,13 @@
+local LOG_EVERYTHING = false
+ROSSystemLog:space(2)
+ROSSystemLog:write("----------------------------- "..shell.getRunningProgram().." -----------------------------",nil,nil,false)
+ROSSystemLog:space(2)
+
 MainScreenElements = {}
 MainScreenElements.__index = MainScreenElements
 
-if UIs.mainScreen then os.reboot() end
+if UIs.mainScreen then ROSSystemLog:close() os.reboot() end
+ROSSystemLog:write("initializing mainScreen graphic frame")
 UIs.mainScreen = graphicLib.Frame:init("RedOS")
 
 local screenElements = {}
@@ -68,6 +74,7 @@ local function ColorTaskBar(isBackground,colorTable)
     return colorScheme
 end
 
+ROSSystemLog:write("initializing Red OS Desktop UI")
 local fileTextDisplay = UIs.mainScreen.hologram:addHologram("",nil,nil,nil,1,1,false,nil,true)
 local dirTextDisplay = UIs.mainScreen.hologram:addHologram("",nil,nil,nil,1,1,false,false,true)
 local taskBar = UIs.mainScreen.hologram:addHologram(resetTaskBar(),ColorTaskBar(),ColorTaskBar(true),nil,1,sizeY)
@@ -110,31 +117,47 @@ local function loadImage(dir)
     end
 end
 
-local defaultLogos, defaultLogosLen = {}, 5
+ROSSystemLog:write("loading default file Logos")
+local defaultLogos, defaultLogosLen = {}, 6
 defaultLogos[0] = makeCheckerPattern(3,3,colors.gray,colors.magenta)
 table.insert(defaultLogos,loadImage("system/ROSPics/fileLogos/folder.nfp")) --1 folder
 table.insert(defaultLogos,loadImage("system/ROSPics/fileLogos/exe.nfp")) --2 exe
 table.insert(defaultLogos,loadImage("system/ROSPics/fileLogos/pic.nfp")) --3 pic
 table.insert(defaultLogos,loadImage("system/ROSPics/fileLogos/file.nfp")) --4 file
 table.insert(defaultLogos,loadImage("system/ROSPics/fileLogos/music.nfp")) --5 music
+table.insert(defaultLogos,loadImage("system/ROSPics/fileLogos/log.nfp")) -- 6 log
 
 UIs.mainScreen:setBackgroundImage(UIs.mainScreen:getShapeSprite(colors.black,nil,sizeX,sizeY))
 
-local function checkNeededStuff()
-    if type(UIs.mainScreen.sprite) ~= "table" then error("incorrect type for 'UIs.mainScreen.sprite' is type: "..type(UIs.mainScreen.sprite).." should be table") end
-    if type(MainScreenElements) ~= "table" then error("incorrect type for 'MainScreenElements' is type: "..type(MainScreenElements).." should be table") end
-    if type(screenElements) ~= "table" then error("incorrect type for 'screenElements' is type: "..type(screenElements).." should be table") end
-    fileTextDisplay:changeHologramData("")
-    dirTextDisplay:changeHologramData("")
+if type(UIs.mainScreen.sprite) ~= "table" then
+    ROSSystemLog:write("incorrect type for 'UIs.mainScreen.sprite' is type: "..type(UIs.mainScreen.sprite).." should be table","INIT-ERROR")
+    error("incorrect type for 'UIs.mainScreen.sprite' is type: "..type(UIs.mainScreen.sprite).." should be table")
+end
+if type(MainScreenElements) ~= "table" then
+    ROSSystemLog:write("incorrect type for 'MainScreenElements' is type: "..type(MainScreenElements).." should be table","INIT-ERROR")
+    error("incorrect type for 'MainScreenElements' is type: "..type(MainScreenElements).." should be table")
+end
+if type(screenElements) ~= "table" then
+    ROSSystemLog:write("incorrect type for 'screenElements' is type: "..type(screenElements).." should be table","INIT-ERROR")
+    error("incorrect type for 'screenElements' is type: "..type(screenElements).." should be table")
+end
+fileTextDisplay:changeHologramData("")
+dirTextDisplay:changeHologramData("")
 
-    if type(defaultLogos) ~= "table" then error("incorrect type for 'defaultLogos' is type: "..type(defaultLogos).." should be table") end
-    if #defaultLogos < defaultLogosLen then error("length of 'defaultLogos' is not long enough length: "..#defaultLogos.." should be "..defaultLogosLen) end
-    for i=1,#defaultLogos do
-        if type(defaultLogos[i]) ~= "table" then error("incorrect type for 'defaultLogos["..i.."]' is type: "..type(defaultLogos[i]).." should be table") end
+if type(defaultLogos) ~= "table" then
+    ROSSystemLog:write("incorrect type for 'defaultLogos' is type: "..type(defaultLogos).." should be table","INIT-ERROR")
+    error("incorrect type for 'defaultLogos' is type: "..type(defaultLogos).." should be table")
+end
+if #defaultLogos < defaultLogosLen then 
+    ROSSystemLog:write("length of 'defaultLogos' is not long enough length: "..#defaultLogos.." should be "..defaultLogosLen,"INIT-ERROR")
+    error("length of 'defaultLogos' is not long enough length: "..#defaultLogos.." should be "..defaultLogosLen)
+end
+for i=1,#defaultLogos do
+    if type(defaultLogos[i]) ~= "table" then
+        ROSSystemLog:write("incorrect type for 'defaultLogos["..i.."]' is type: "..type(defaultLogos[i]).." should be table","INIT-ERROR")
+        error("incorrect type for 'defaultLogos["..i.."]' is type: "..type(defaultLogos[i]).." should be table")
     end
 end
-
-checkNeededStuff()
 
 local function isPic(dir)
     local ext  = settings.get("paint.default_extension")
@@ -166,6 +189,19 @@ local function findCenterFromPoint(x,logo,text)
         returnValue = sizeX-#text
     end
     return returnValue
+end
+
+local function closeRednet()
+    if ROSSystemLog then ROSSystemLog:write("closing all Rednet Ports") end
+    local modemNames = {}
+    peripheral.find("modem",function (name,modem)
+        if modem.isWireless() then
+            table.insert(modemNames,name)
+        end
+    end)
+    for i=1,#modemNames do
+        rednet.close(modemNames[i])
+    end
 end
 
 function MainScreenElements:new(x,y)
@@ -221,6 +257,14 @@ function MainScreenElements:setLogo(fileDir)
         self.logo = defaultLogos[3]
         self.dir = fileDir
         self.type = "pic"
+    elseif fileDir:sub(-4) == ".log" then
+        self.logo = defaultLogos[6]
+        self.dir = fileDir
+        self.type = "log"
+    elseif fileDir:sub(-4) == ".lua" then
+        self.logo = defaultLogos[4]
+        self.dir = fileDir
+        self.type = "lua"
     elseif fs.exists(fileDir) then
         self.logo = defaultLogos[4]
         self.dir = fileDir
@@ -266,6 +310,7 @@ end
 local function setupScreen()
     local addElements = true
     local startX, startY, offsetX, offsetY = 1, 1, 1, 1
+    ROSSystemLog:write("adding Screen Elements")
     while addElements do
         table.insert(screenElements,MainScreenElements:new(startX+offsetX,startY+offsetY))
         if startX+offsetX+5 >= sizeX and not (startY+offsetY+5 >= sizeY) then
@@ -276,12 +321,15 @@ local function setupScreen()
         else
             offsetX = offsetX + 4
         end
-        --print(offsetX,offsetY)
     end
+    ROSSystemLog:write("added "..#screenElements.." Screen Elements")
 end
 
 
 local function setLogos(dir,isRefreshLoop)
+
+    if not isRefreshLoop and LOG_EVERYTHING then ROSSystemLog:write("setting screenElements") end --only happens for main loop to stop race conditions
+
     for i=1,#screenElements do
         screenElements[i]:resetLogo()
     end
@@ -312,7 +360,7 @@ local function setLogos(dir,isRefreshLoop)
     local j=1
     local list = {{}}
     for i=1,#fileList do
-        if #list[j] > #screenElements then
+        if #list[j] > #screenElements-1 then
             j=j+1
             list[j]={}
         end
@@ -325,14 +373,43 @@ local function setLogos(dir,isRefreshLoop)
 
     maxPage = #list
 
+    local drives = {{},{}}
+    peripheral.find("drive",function (name)
+        table.insert(drives[1],name)
+    end)
+    for k=1,#drives[1] do
+        drives[2][k] = disk.getMountPath(drives[1][k])
+    end
+
     for i=1,#screenElements do
         if list[currentPage][i] then
+            screenElements[i].isDisk = false
             if #dir > 0 then
                 screenElements[i]:setLogo(dir.."/"..list[currentPage][i])
                 screenElements[i].name = list[currentPage][i]
             else
                 screenElements[i]:setLogo(list[currentPage][i])
                 screenElements[i].name = list[currentPage][i]
+            end
+            if #dir < 1 and string.find(screenElements[i].name,"disk",nil,true) then
+                if string.find(screenElements[i].name,"copy",nil,true) then
+                    fs.delete(screenElements[i].dir)
+                else
+                    local driveID
+                    for k=1,#drives[1] do
+                        if screenElements[i].name == drives[2][k] then
+                            driveID = k
+                            break
+                        end
+                    end
+                    ROSSystemLog:write(textutils.serialise(drives,{compact = true}))
+                    if drives[1][driveID] then
+                        screenElements[i].name = disk.getLabel(drives[1][driveID]).."("..disk.getID(drives[1][driveID])..")"
+                    else
+                        screenElements[i].name = drives[2][driveID] or "failed to load"
+                    end
+                    screenElements[i].isDisk = true
+                end
             end
             if screenElements[i].type == "folder" then
                 if fs.exists(screenElements[i].dir.."/executable.lua") then
@@ -385,18 +462,18 @@ local function setLogos(dir,isRefreshLoop)
                 screenElements[i].hologram:changeHologramData(screenElements[i].name:sub(1,2)..screenElements[i].name:sub(-1),{{colors.white,1},{colors.magenta,3}})
             elseif screenElements[i].type == "music" then
                 screenElements[i].hologram:changeHologramData(screenElements[i].name:sub(1,2)..screenElements[i].name:sub(-1),{{colors.white,1},{colors.yellow,3}})
+            elseif screenElements[i].type == "log" then
+                screenElements[i].hologram:changeHologramData(screenElements[i].name:sub(1,2).."g",{{colors.white,1},{colors.orange,3}})
+            elseif screenElements[i].type == "lua" then
+                screenElements[i].hologram:changeHologramData(screenElements[i].name:sub(1,2).."l",{{colors.white,1},{colors.blue,3}})
             else
                 screenElements[i].hologram:changeHologramData(screenElements[i].name:sub(1,2)..screenElements[i].name:sub(-1),{{colors.white,1},{colors.lightGray,3}})
-
-                if screenElements[i].name:sub(-4) == ".lua" then
-                    screenElements[i].hologram:changeHologramData(screenElements[i].name:sub(1,2).."l",{{colors.white,1},{colors.blue,3}})
-                end
             end
         end
     end
     if not isRefreshLoop then
         fileTextDisplay:changeHologramData("",nil,nil,1,1)
-        taskBar:changeHologramData(resetTaskBar(),ColorTaskBar(),ColorTaskBar(true)) 
+        taskBar:changeHologramData(resetTaskBar(),ColorTaskBar(),ColorTaskBar(true))
         taskBarState.state=nil
     end
 
@@ -421,6 +498,7 @@ end
 
 local function showErrorMessage(message, elementNum)
     message = tostring(message)
+    ROSSystemLog:write(message,"ERRORecp")
     local eraseLen = 0
     if #screenElements[elementNum].name > #message then
         eraseLen = #screenElements[elementNum].name - #message
@@ -434,13 +512,23 @@ local openedFile = false
 local function execute(...)
     openedFile = true
     local inputs = {...}
+    local str = ""
+    for i=1,#inputs do
+        str = str .. tostring(inputs[i])
+        if i~=#inputs then
+            str = str ..", "
+        end
+    end
+    ROSSystemLog:write("execute function called with args: "..str)
 
     local startTime = os.clock()
+    resetScreen()
     local result = shell.run(table.unpack(inputs))
     if not result then
         sleep(0.2)
         term.setCursorPos(1,sizeY-2)
         term.setBackgroundColor(colors.black)
+        ROSSystemLog:write("the executed Program has run into an unexpected Error","ERRORecp")
         printError("the Program has run into an unexpected Error")
         print()
         term.write("do anything to return to desktop"..string.rep(" ",sizeX-32))
@@ -460,12 +548,13 @@ local function execute(...)
             event = {os.pullEvent()}
         end
     end
+    ROSSystemLog:write("finished execution")
     fileTextDisplay:changeHologramData("",nil,nil,1,1)
     UIs.mainScreen:render()
     openedFile = false
 end
-
-local stopAudio, usedSpeakers, SpeakerScheduler, activeAudioBrokers = false, {}, {}, 0
+_G.SPEAKERS={stopAudio = false}
+local usedSpeakers, SpeakerScheduler, activeAudioBrokers = {}, {}, 0
 
 SpeakerScheduler.allocateSpeaker = function()
     local index
@@ -498,7 +587,7 @@ SpeakerScheduler.deAllocateSpeaker = function(item)
 end
 
 local function AudioDataBroker(dir,elementNum)
-    stopAudio = false
+    SPEAKERS.stopAudio = false
 
     local speaker, speakerSide = SpeakerScheduler.allocateSpeaker()
 
@@ -524,7 +613,7 @@ local function AudioDataBroker(dir,elementNum)
         --print(activeAudioBrokers)
         while not speaker.playAudio(buffer) do
             os.pullEvent("speaker_audio_empty")
-            if stopAudio then
+            if SPEAKERS.stopAudio then
                 activeAudioBrokers = activeAudioBrokers - 1
                 SpeakerScheduler.deAllocateSpeaker(speakerSide)
                 return
@@ -596,7 +685,7 @@ local function getOrigin(dir)
         testString = testString:sub(1,#testString-1)
         if testString:sub(-1) == "/" or #testString == 0 then
             return testString:sub(1,#testString-1)
-        elseif #dir > 50 then
+        elseif #dir > 1000 then
             sleep(0.01)
         end
     end
@@ -664,10 +753,12 @@ local function runScreen(isSubProcess)
             if (event[3] == sizeX and event[4] == sizeY) and currentPage < maxPage then
                 selected = nil
                 currentPage=currentPage+1
+                if LOG_EVERYTHING then ROSSystemLog:write("changed page to: "..currentPage) end
                 setLogos(currentShownDir)
             elseif (event[3] == sizeX-1 and event[4] == sizeY) and currentPage > 1 then
                 selected = nil
                 currentPage=currentPage-1
+                if LOG_EVERYTHING then ROSSystemLog:write("changed page to: "..currentPage) end
                 setLogos(currentShownDir)
             elseif event[3] == sizeX-6 and event[4] == sizeY then
                 openedFile = true
@@ -742,6 +833,7 @@ local function runScreen(isSubProcess)
                         end
                         local temp = io.open(preDir..fileName,"w")
                         temp:close()
+                        ROSSystemLog:write("adding file: "..preDir..fileName)
                     elseif addType == "folder" then
                         if fs.exists(preDir..fileName) then
                             local suffix = 1
@@ -751,6 +843,7 @@ local function runScreen(isSubProcess)
                             fileName = fileName.."-"..suffix
                         end
                         fs.makeDir(preDir..fileName)
+                        ROSSystemLog:write("added folder: "..preDir..fileName)
                     end
                 end
                 setLogos(currentShownDir)
@@ -778,7 +871,7 @@ local function runScreen(isSubProcess)
                 local fileName, directoryName =selected.name, nil --file stuff
                 local internalEvent, moved = {}, false -- functional stuff
                 local currentLocation = getOrigin(selected.dir)
-                while  not moved do
+                while not moved do
                     internalEvent = {os.pullEvent()}
                     if (internalEvent[1]=="key" and (internalEvent[2]==keys.b or internalEvent[2]==keys.backspace)) or (internalEvent[1]=="mouse_click" and internalEvent[4]==sizeY and (internalEvent[3]>=7 and internalEvent[3]<=13)) then
                         moved =  true
@@ -807,10 +900,12 @@ local function runScreen(isSubProcess)
                         end
                     end
                 end
+                ROSSystemLog:write("moved file: "..fileName.." to: "..directoryName)
                 setLogos(currentShownDir)
                 selected = nil
                 taskBarState.state = nil
             elseif (event[3] == 9 and event[4] == sizeY) and taskBarState.state == "fileOptions" then
+                local oldName = selected.dir
                 openedFile = true
                 local newFileName
                 taskBar:changeHologramData(resetTaskBar(),nil,ColorTaskBar(true))
@@ -833,6 +928,7 @@ local function runScreen(isSubProcess)
                         end
                         newFileName = newFileName.."-"..suffix
                     end
+                    ROSSystemLog:write("renamed file: "..oldName.." to: "..newFileName)
                     fs.move(selected.dir,newFileName)
                 end
                 openedFile = false
@@ -842,47 +938,74 @@ local function runScreen(isSubProcess)
             elseif (event[3] == 11 and event[4] == sizeY) and taskBarState.state == "fileOptions" then
                 local newFileName, extension = getNameWithoutExtension(selected.dir)
                 if fs.exists(newFileName.."-copy".."."..extension) then
+                    local orgName = newFileName
                     local suffix = 1
-                    while fs.exists(newFileName.."-copy".."."..extension) do
-                        suffix = suffix + 1
-                    end
                     newFileName = newFileName.."-copy"..suffix.."."..extension
+                    while fs.exists(newFileName) do
+                        suffix = suffix + 1
+                        newFileName = orgName.."-copy"..suffix.."."..extension
+                    end
                 else
                     newFileName = newFileName.."-copy".."."..extension
                 end
+                ROSSystemLog:write("copied file: "..selected.dir)
                 fs.copy(selected.dir,newFileName)
                 selected = nil
                 taskBarState.state = nil
                 setLogos(currentShownDir)
             elseif (event[3]== 13 and event[4] == sizeY) and taskBarState.state == "fileOptions" then
                 fs.delete(selected.dir)
+                ROSSystemLog:write("Deleted file: "..selected.dir)
                 selected = nil
                 taskBarState.state = nil
                 setLogos(currentShownDir)
                 sleep(0.2)
+            elseif (event[3]==7 and event[4]==sizeY) and taskBarState.state == "driveOptions" then
+                local drives = {{},{}}
+                peripheral.find("drive",function(name)
+                    table.insert(drives[1],name)
+                end)
+                for i=1,#drives[1] do
+                    drives[2][i] = disk.getMountPath(drives[1][i])
+                end
+                for i=1,#drives[1] do
+                    if drives[2][i] == selected.dir then
+                        disk.eject(drives[1][i])
+                        break
+                    end
+                end
             else
                 for i=1,#screenElements do
 
                     if screenElements[i]:isSelected(event[3],event[4]) and not (selected == screenElements[i]) then
                         didAction = true
-                        taskBarState.state="fileOptions"
-                        taskBarState.text[7]="M"
-                        taskBarState.text[9]="R"
-                        taskBarState.text[11] = "C"
-                        taskBarState.text[13] = "D"
-                        taskBar:changeHologramData(makeTaskBar(),nil,ColorTaskBar(true,{{colors.darkGray,7},{colors.red,13},{colors.lightGray,14}}))
-                        taskBar:render()
+                        if not screenElements[i].isDisk then
+                            taskBarState.state="fileOptions"
+                            taskBarState.text[7]="M"
+                            taskBarState.text[9]="R"
+                            taskBarState.text[11] = "C"
+                            taskBarState.text[13] = "D"
+                            taskBar:changeHologramData(makeTaskBar(),nil,ColorTaskBar(true,{{colors.darkGray,7},{colors.red,13},{colors.lightGray,14}}))
+                            taskBar:render()
+                        elseif screenElements[i].isDisk then
+                            taskBarState.state="driveOptions"
+                            taskBarState.text[7]="E"
+                            taskBarState.text[9]=" "
+                            taskBarState.text[11] = " "
+                            taskBarState.text[13] = " "
+                            taskBar:changeHologramData(makeTaskBar(),ColorTaskBar(nil,{{colors.red,1}}),ColorTaskBar(true,{{colors.darkGray,7}}))
+                            taskBar:render()
+                        else
+                            taskBar:changeHologramData(resetTaskBar(),ColorTaskBar(),ColorTaskBar(true))
+                            taskBar:render()
+                        end
                         selected = screenElements[i]
                     elseif screenElements[i]:isSelected(event[3],event[4]) and (selected == screenElements[i]) then
                         didAction = true
                         if event[2] == 1 then
                             selected = nil
-                            if screenElements[i].type == "file" then
-                                resetScreen()
-                                execute(screenElements[i].dir)
-                            elseif screenElements[i].type == "folder" then
+                            if screenElements[i].type == "folder" then
                                 if fs.exists(screenElements[i].dir.."/executable.lua") then
-                                    resetScreen()
                                     execute(screenElements[i].dir.."/executable.lua")
                                 elseif fs.exists(screenElements[i].dir) then
                                     currentShownDir = screenElements[i].dir
@@ -891,26 +1014,33 @@ local function runScreen(isSubProcess)
                                         screenElements[1]:isSelected(2,2)
                                         navigatorSelected = 1
                                     end
+                                    if LOG_EVERYTHING then ROSSystemLog:write("redirected to: /"..currentShownDir) end
                                 end
                             elseif screenElements[i].type == "pic" and term.isColor() then
-                                resetScreen()
                                 execute("paint",screenElements[i].dir)
                             elseif screenElements[i].type == "pic" and not term.isColor() then
                                 showErrorMessage("Can't use paint!",i)
                             elseif screenElements[i].type == "music" then
                                 if peripheral.find("speaker") then
+                                    ROSSystemLog:write("playing sound: "..screenElements[i].dir)
                                     parallel.waitForAll(function ()
                                         startedSubProcess = true
                                         AudioDataBroker(screenElements[i].dir,i)
                                     end,function () runScreen(true) end)
+                                    ROSSystemLog:write("finished playing music")
                                 else
                                     showErrorMessage("No Speaker Attached!", i)
                                 end
+                            elseif screenElements[i].type == "lua" then
+                                execute(screenElements[i].dir)
+                            else
+                                execute("edit",screenElements[i].dir)
                             end
                         elseif event[2] == 2 then
                             selected = nil
                             if screenElements[i].type == "folder" then
                                 currentShownDir = screenElements[i].dir
+                                if LOG_EVERYTHING then ROSSystemLog:write("redirected to: /"..currentShownDir) end
                             else
                                 execute("edit",screenElements[i].dir)
                             end
@@ -929,15 +1059,19 @@ local function runScreen(isSubProcess)
                     selected = nil
                 end
                 currentShownDir = getOrigin(currentShownDir)
+                if LOG_EVERYTHING then ROSSystemLog:write("redirected to: /"..currentShownDir) end
                 currentPage = 1
                 setLogos(currentShownDir)
             elseif event[2] == keys.zero then
+                closeRednet()
+                ROSSystemLog:close()
                 os.shutdown()
             elseif event[2] == keys.numPadEnter then
                 terminated = true
                 return
             elseif event[2] == keys.q then
-                stopAudio = true
+                SPEAKERS.stopAudio = true
+                ROSSystemLog:write("stopping all music")
             elseif event[2] == keys.tab then
                 if navigatorActive then
                     navigatorActive = false
@@ -968,6 +1102,7 @@ local function runScreen(isSubProcess)
                 selected = nil
             end
             currentShownDir = getOrigin(currentShownDir)
+            if LOG_EVERYTHING then ROSSystemLog:write("redirected to: /"..currentShownDir) end
             currentPage = 1
             setLogos(currentShownDir)
         end
@@ -985,14 +1120,96 @@ local function updateDesktop()
     end
 end
 setupScreen()
+ROSSystemLog:write("collecting Background Scripts")
+ROSSystemLog:write("filtering system/BGScripts Folder for lua scripts")
+local BGSList = fs.list("system/BGScripts")
+local offset = 0
+for i=1,#BGSList do
+    i=i-offset
+    if BGSList[i]:sub(-4) ~= ".lua" then
+        table.remove(BGSList,i)
+        offset = offset + 1
+    end
+end
+offset = nil
+ROSSystemLog:write("cleaning Background Scripts")
+for i=1,#BGSList do
+    local content = {}
+    local BGScript = io.open("system/BGScripts/"..BGSList[i],"r")
+    local lines = 0
+    if BGScript then
+        local lastOutput = ""
+        while lastOutput do
+            local text = BGScript:read("l")
+            if text then
+                local orgText = text
+                local comStart = string.find(text,"--",nil,true)
+                if comStart then text = string.sub(text,1,comStart-1) end
+                if #text > 1 then
+                    if string.find(text,"os.reboot",nil,true) then
+                        text = "--removed this line because of suspected os.reboot call | "..orgText
+                        lines = lines + 1
+                    elseif string.find(text,"os.shutdown",nil,true) then
+                        text = "--removed this line because of suspected os.shutdown call | "..orgText
+                        lines = lines + 1
+                    end
+                    table.insert(content,text)
+                else
+                    table.insert(content,orgText)
+                end
+            end
+            lastOutput = text
+        end
+        BGScript:close()
+        ROSSystemLog:write("cleaned "..lines.." lines from script: system/BGScripts/"..BGSList[i])
+        local BGScript = io.open("system/BGScripts/"..BGSList[i],"w")
+        for i=1,#content do
+            BGScript:write(content[i])
+            if i ~= #content then BGScript:write("\n") end
+        end
+        BGScript:close()
+    end
+end
+ROSSystemLog:write("converting Background Scripts to function")
+local BGScripts = {}
 
-xpcall(parallel.waitForAny(runScreen,updateDesktop),function (err)
+for i=1,#BGSList do
+    table.insert(BGScripts,function()
+        local processDir = "system/BGScripts/"..BGSList[i]
+        local fn, err
+        if not setfenv then
+            fn, err = loadfile(processDir,nil,_ENV)
+        else
+            fn, err = loadfile(processDir)
+            if type(fn) == "function" then fn = setfenv(fn,_ENV) end
+        end
+        if type(fn) ~= "function" then
+            ROSSystemLog:write("PROCESS-LOADING-ERROR:\n    FILE:"..processDir.."\n    ERROR:"..err,"SUB-PROCESS-ERROR")
+        else
+            xpcall(fn,function(err) ROSSystemLog:write("PROCESS-RUNTIME-ERROR:\n    FILE:"..processDir.."\n    ERROR:"..err,"SUB-PROCESS-ERROR") end)
+        end
+    end)
+end
+ROSSystemLog:write("created "..#BGScripts.." sub-Process Function(s)")
+
+local function runSubProcesses()
+    parallel.waitForAll(table.unpack(BGScripts))
+    ROSSystemLog:write("all sub-Processes finished")
+    while true do
+        sleep(600)
+    end
+end
+
+xpcall(function() parallel.waitForAny(runScreen,updateDesktop,runSubProcesses) end,function (err)
     if not (string.find(err,"attempt to call a number value",nil,true) and terminated) then
         printError("Error: "..err)
+        ROSSystemLog:write("Error: "..err,"ERROR")
         sleep(2)
     end
 end)
 local temp = io.open(".terminate.txt","w")
 temp:close()
+
+closeRednet()
 
 resetScreen()
