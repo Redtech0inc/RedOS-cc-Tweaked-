@@ -60,7 +60,7 @@ function winAPI.WindowClass:create(name, x, y, sizeX, sizeY, backgroundColor, ti
         lineX = lineX + 1
     end
     for i=1,sizeY-1 do
-        table.insert(obj.holograms.lines,obj.displayOBJ.hologram:addHologram("",{{colors.black,1}},nil,nil,lineX,obj.y+i,nil,false))
+        table.insert(obj.holograms.lines,obj.displayOBJ.hologram:addHologram("",{{colors.black,1}},{{backgroundColor,1}},nil,lineX,obj.y+i,nil,false))
     end
 
     obj.sprites.XButton = obj.displayOBJ.hologram:addHologram("X",{{colors.white,1}},{{colors.red,1}},nil,obj.x,obj.y)
@@ -154,24 +154,24 @@ function winAPI.WindowClass:clear(line)
     self:update()
 end
 
-function winAPI.WindowClass:addSprite(img,priority,x,y,screenBound)
+function winAPI.WindowClass:addSprite(img,priority,x,y)
     x = x or 1
     y = y or 1
     x = x - 1
     if self.x+x > self.sizeX then x = self.sizeX-1 end
     if self.y+y > self.sizeY then y = self.sizeY-1 end
-    local spriteOBJ = self.displayOBJ.sprite:addSprite(img,priority,self.x+x,self.y+y,screenBound)
+    local spriteOBJ = self.displayOBJ.sprite:addSprite(img,priority,self.x+x,self.y+y,false)
     table.insert(self.sprites.window,spriteOBJ)
     return spriteOBJ
 end
 
-function winAPI.WindowClass:addHologram(text,textColor,textBackgroundColor,priority,x,y,dynamic,wrapped,screenBound)
+function winAPI.WindowClass:addHologram(text,textColor,textBackgroundColor,priority,x,y,dynamic,wrapped)
     x = x or 1
     y = y or 1
     x = x - 1
-    if self.x+x > self.sizeX then x = self.sizeX-1 end
-    if self.y+y > self.sizeY then y = self.sizeY-1 end
-    local hologramOBJ = self.displayOBJ.hologram:addHologram(text,textColor,textBackgroundColor,priority,self.x+x,self.y+y,dynamic,wrapped,screenBound)
+    if self.x+(x-1) > self.sizeX then x = self.sizeX-1 end
+    if self.y+(y-1) > self.sizeY then y = self.sizeY-1 end
+    local hologramOBJ = self.displayOBJ.hologram:addHologram(text,textColor,textBackgroundColor,priority,self.x+x,self.y+y,dynamic,wrapped,false)
     table.insert(self.holograms.window,hologramOBJ)
     return hologramOBJ
 end
@@ -180,8 +180,10 @@ function winAPI.WindowClass:setWindowPos(rootX,rootY)
     if type(rootX) ~= "number" or type(rootY) ~= "number" then return end
     self.x = rootX
     self.y = rootY
+
     self.sprites.XButton:changeHologramData(nil,nil,nil,rootX,rootY)
     self.holograms.label:changeHologramData(nil,nil,nil,rootX+1,rootY)
+
     self.sprites.body:changeSpriteData(nil,rootX,rootY)
     local lineX = rootX
     if self.roundEdges then
@@ -213,7 +215,7 @@ function winAPI.WindowClass:run(func, ...)
         while true do
             local events = {os.pullEvent()}
             if events[1] == "mouse_click" then
-                if events[3] == self.x and events[4] == self.y then
+                if events[3] == self.x and events[4] == self.y and not self.roundEdges then
                     self.loop = false
                 elseif events[4] == self.y and (events[3] >= self.x and events[3] <= self.x+(self.sizeX-1)) then
                     distanceToRoot = self.x - events[3]
