@@ -78,7 +78,7 @@ local function saveSettingsAsJSON(dir)
 end
 local function programEnd(token)
     if token then
-        local input = readInput({"do you want me to remember this token: "..string.sub(token, 1, 4).."..."..string.sub(token, -4).."? under setting 'github.token'","this setting will be deleted together with the installer"},"y/n:")
+        local input = readInput({"do you want me to remember this token: "..string.sub(token, 1, 4).."..."..string.sub(token, -4).."? in the exe folder in settings.json","this setting will be deleted together with the Updater"},"y/n:")
         if string.find(input,"y",nil,true) then
             settings.token=token
         end
@@ -202,3 +202,4 @@ setTextColor(colors.white)
 print(" Updater:")
 print("would you like to update the RedOS (your files won't be lost but backing up data is never a bad idea ;) )")
 run()
+
