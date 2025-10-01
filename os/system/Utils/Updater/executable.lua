@@ -155,7 +155,7 @@ local function run()
         print()
         downloadRepo("",githubUrl("Redtech0inc","RedOS-cc-Tweaked-","os/"),token)
         print()
-        updaterLog = io.open(path.."updaterLog.log","w")
+        updaterLog = io.open("system/Logs/updaterLog.log","w")
         if updaterLog then updaterLog:write("---------------------------START-OF-INSTALLER-LOG---------------------------","\n") end
         local fileList = fs.list("os/")
         for i=1,#fileList do
@@ -202,3 +202,4 @@ setTextColor(colors.white)
 print(" Updater:")
 print("would you like to update the RedOS (your files won't be lost but backing up data is never a bad idea ;) )")
 run()
+
