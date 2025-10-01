@@ -14,7 +14,7 @@ local function readInput(strings,arrow,char)
     end
     local _,y =term.getCursorPos()
     term.write(tostring(arrow))
-    local input = io.read(char)
+    local input = read(char)
     term.setCursorPos(1,y+1)
 
     return input
