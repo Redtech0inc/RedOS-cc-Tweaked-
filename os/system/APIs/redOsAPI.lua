@@ -9,20 +9,20 @@ rosAPI.formatting = {
     topRight = function (sizeX)
         local maxX = term.getSize()
         sizeX = sizeX or 1
-        return maxX - sizeX, 1
+        return (maxX - sizeX)+1, 1
     end,
 
     bottomLeft = function (sizeY)
         local _, maxY = term.getSize()
         sizeY = sizeY or 1
-        return 1, maxY - sizeY
+        return 1, (maxY - sizeY)+1
     end,
 
     bottomRight = function (sizeX, sizeY)
         local maxX, maxY = term.getSize()
         sizeX = sizeX or 1
         sizeY = sizeY or 1
-        return maxX - sizeX,  maxY - sizeY
+        return (maxX - sizeX)+1,  (maxY - sizeY)+1
     end,
 
     center = function (sizeX, sizeY, roundFunc)
