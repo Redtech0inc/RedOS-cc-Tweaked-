@@ -6,7 +6,7 @@ local function arrowRead(arrow,char)
     term.write(arrow.." ")
     return read(char)
 end
-local function readInput(strings,arrow)
+local function readInput(strings,arrow,char)
     arrow = arrow or ">"
 
     for i=1,#strings do
@@ -14,7 +14,7 @@ local function readInput(strings,arrow)
     end
     local _,y =term.getCursorPos()
     term.write(tostring(arrow))
-    local input = io.read()
+    local input = io.read(char)
     term.setCursorPos(1,y+1)
 
     return input
@@ -135,7 +135,7 @@ local function run()
             print()
         end
         while not (confirmed or token)and input ~= "e" do
-            token = readInput({"please enter your github token for a higher rate limit (5,000 requests/hour)","press enter if you don't want to do this"})
+            token = readInput({"please enter your github token for a higher rate limit (5,000 requests/hour)","press enter if you don't want to do this"},nil,"*")
             if #token < 1 then
                 print("warning you are using unauthenticated download requests")
                 print("this means you can only do 60 requests / hour")
@@ -153,7 +153,7 @@ local function run()
             print("using github token: "..string.sub(token, 1, 4).."..."..string.sub(token, -4))
         end
         print()
-        downloadRepo("",githubUrl("Redtech0inc","RedOS-cc-Tweaked-","os/"))
+        downloadRepo("",githubUrl("Redtech0inc","RedOS-cc-Tweaked-","os/"),token)
         print()
         updaterLog = io.open(path.."updaterLog.log","w")
         if updaterLog then updaterLog:write("---------------------------START-OF-INSTALLER-LOG---------------------------","\n") end
