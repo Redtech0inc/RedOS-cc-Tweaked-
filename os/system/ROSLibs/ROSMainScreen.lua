@@ -1184,9 +1184,9 @@ for i=1,#BGSList do
             if fn then fn = setfenv(fn,_ENV) end
         end
         if type(fn) ~= "function" then
-            ROSSystemLog:write("PROCESS-LOADING-ERROR:\n    FILE:"..processDir.."\n    ERROR:"..err,"SUB-PROCESS-ERROR")
+            ROSSystemLog:write("PROCESS-LOADING-ERROR:\n"..string.rep("    ",11).."FILE:"..processDir.."\n"..string.rep("    ",11).."ERROR:"..err,"SUB-PROCESS-ERROR")
         else
-            xpcall(fn,function(err) ROSSystemLog:write("PROCESS-RUNTIME-ERROR:\n    FILE:"..processDir.."\n    ERROR:"..err,"SUB-PROCESS-ERROR") end)
+            xpcall(fn,function(err) ROSSystemLog:write("PROCESS-RUNTIME-ERROR:\n"..string.rep("    ",11).."FILE:"..processDir.."\n"..string.rep("    ",11).."ERROR:"..err,"SUB-PROCESS-ERROR") end)
         end
     end)
 end
