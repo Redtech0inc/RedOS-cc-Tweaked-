@@ -1181,7 +1181,7 @@ for i=1,#BGSList do
             fn, err = loadfile(processDir,nil,_ENV)
         else
             fn, err = loadfile(processDir)
-            if type(fn) == "function" then fn = setfenv(fn,_ENV) end
+            if fn then fn = setfenv(fn,_ENV) end
         end
         if type(fn) ~= "function" then
             ROSSystemLog:write("PROCESS-LOADING-ERROR:\n    FILE:"..processDir.."\n    ERROR:"..err,"SUB-PROCESS-ERROR")
@@ -1200,16 +1200,17 @@ local function runSubProcesses()
     end
 end
 
-xpcall(function() parallel.waitForAny(runScreen,updateDesktop,runSubProcesses) end,function (err)
-    if not (string.find(err,"attempt to call a number value",nil,true) and terminated) then
-        printError("Error: "..err)
-        ROSSystemLog:write("Error: "..err,"ERROR")
-        sleep(2)
-    end
-end)
+local erroredOut
+parallel.waitForAny(runScreen,updateDesktop,runSubProcesses)
 local temp = io.open(".terminate.txt","w")
 temp:close()
 
 closeRednet()
 
 resetScreen()
+
+if terminated then
+    print("You're now outside of the RedOS and are using CraftOS (built-in)")
+    print()
+    print("enter 'startup' or restart the computer to restart RedOS")
+end
