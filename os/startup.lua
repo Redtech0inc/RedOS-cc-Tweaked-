@@ -200,43 +200,42 @@ else
     end, function (returnedError)
         term.setCursorPos(1,1)
         printError("ERROR: "..returnedError)
-        printError("graphicLib.lua Is Missing or Brocken -> mainScreen.lua failed")
+        printError("graphicLib.lua Is Missing or Brocken -> ROSMainScreen.lua failed")
         if ROSSystemLog then
             ROSSystemLog:write("GraphicLib failed","STARTUP-ERROR",nil,nil,false)
             ROSSystemLog:write("ERROR: "..returnedError,nil,nil,false)
         end
         cope()
     end)
-    xpcall(function() local result = shell.run("system/ROSLibs/ROSMainScreen.lua")
-        if not result then error("something went wrong whilst running the desktop")
-        elseif fs.exists(".terminate.txt") then
-            print("You're now outside of the RedOS and are using CraftOS (built-in)")
-            print()
-            print("enter 'startup' or restart the computer to restart RedOS")
-            fs.delete(".terminate.txt")
-        end
-    end, function (returnedError)
-        if not fs.exists(".terminate.txt") then
+    local mainScreen, loadFileError
+    if not setfenv then
+        mainScreen, loadFileError=loadfile("system/ROSLibs/ROSMainScreen.lua","t",_ENV)
+    else
+        mainScreen, loadFileError=loadfile("system/ROSLibs/ROSMainScreen.lua")
+        if mainScreen then mainScreen=setfenv(mainScreen,_ENV) end
+    end
+    if mainScreen then
+        xpcall(mainScreen,
+        function (returnedError)
             printError("ERROR: "..returnedError)
-        elseif fs.exists(".terminate.txt") then
-            print("You're now outside of the RedOS and are using CraftOS (built-in)")
-            print()
-            print("enter 'startup' or restart the computer to restart RedOS")
-            fs.delete(".terminate.txt")
-        end
-        if fs.exists(".error.txt") then
-            cope()
-            local temp = io.open(".terminate.txt","w")
-            temp:close()
-            term.clear()
-        end
-        if not fs.exists(".terminate.txt") then
-            local temp = io.open(".error.txt","w")
-            temp:close()
-            os.reboot()
-        else
-            fs.delete(".terminate.txt")
-        end
-    end)
-    if ROSSystemLog then ROSSystemLog:close() end
+            if fs.exists(".error.txt") then
+                cope()
+                local temp = io.open(".terminate.txt","w")
+                temp:close()
+                term.clear()
+            end
+            if not fs.exists(".terminate.txt") then
+                local temp = io.open(".error.txt","w")
+                temp:close()
+                os.reboot()
+            else
+                fs.delete(".terminate.txt")
+            end
+        end)
+    else
+        printError("something went wrong whilst attempting to load the desktop")
+        printError("ERROR: "..loadFileError)
+        cope()
+    end
+    if ROSSystemLog and ROSSystemLog.close then ROSSystemLog:close() end
 end
