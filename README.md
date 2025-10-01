@@ -27,7 +27,6 @@ I also accept suggestions for future additions<br>
 keep in mind to not suggest features that are already teased or in the OS it's self (shown below)
 
 ### Teased Features
-<li>RuntimeLogs
 <li>users (maybe)
 <li>settings
 <li>API Documentation (technically not a feature but coming soon anyways)
@@ -35,7 +34,7 @@ keep in mind to not suggest features that are already teased or in the OS it's s
 <li>Multishell desktop UI support (right now multishell brakes it!)
 <li>folder link / folder alias
 <li>monitor features
-<li>rednet features
+<li>rednet features (still in progress)
 
 ### Existing Features
 Don't look at this if you want to get surprised!
@@ -62,6 +61,7 @@ Don't look at this if you want to get surprised!
 <li>Console access remains with you
 <li>Uninstaller, can be found in the system directory shown on the desktop or through the console under system/Utils/Uninstaller/executable.lua (can only be used if desktop environment has run once upon startup)
 <li> utility APIs can be found under system/APIs (all requiarable on their own or import all using require("system/APIs")) documentation following soon
+<li>Runtime Logs found under system/Logs
 <br><br><br><br><br>
 
 # enjoy
