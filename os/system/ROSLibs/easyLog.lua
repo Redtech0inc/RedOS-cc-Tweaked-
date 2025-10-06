@@ -3,10 +3,10 @@ easyLog = {}
 easyLog.Log={}
 easyLog.Log.__index = easyLog.Log
 
-function easyLog.Log:open(name,logTimeFunc,copyErrors,errorDIR)
+function easyLog.Log:open(name,logTimeFunc,copyErrors,errorDir)
     local obj= {}
 
-    obj.errorDIR = errorDIR or "logs/"
+    obj.errorDir = errorDir or "logs/"
 
     --setting all the variables
     obj.name = tostring(name)
@@ -62,8 +62,8 @@ function easyLog.Log:write(text,logClass,endLine,includePreInfo,saveText)
     if self.copyErrors then
         if string.find(string.lower(logClass),"error",nil,true) and string.lower(logClass) ~= "errorecp" then
             if not saveText then self.log:flush() end
-            fs.delete(self.errorDIR..logClass..".log")
-            fs.copy(self.name,self.errorDIR..logClass..".log")
+            fs.delete(self.errorDir..logClass..".log")
+            fs.copy(self.name,self.errorDir..logClass..".log")
         end
     end
 end
