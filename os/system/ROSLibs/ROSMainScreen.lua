@@ -817,7 +817,7 @@ local function runScreen(isSubProcess)
                         fileName = fileName:sub(2,#fileName)
                     end
                 end
-                if addType and #fileName > 0 and fileName ~= "ROSLibs" then
+                if addType and #fileName > 0 and fileName ~= "ROSLibs" and not string.find(fileName,"disk",nil,true) and not (fileName == "system" and #currentShownDir < 2 and addType == "folder") then
                     local preDir = currentShownDir
                     if preDir ~= "" then
                         preDir = preDir.."/"
@@ -845,6 +845,8 @@ local function runScreen(isSubProcess)
                         fs.makeDir(preDir..fileName)
                         ROSSystemLog:write("added folder: "..preDir..fileName)
                     end
+                elseif addType and #fileName > 0 then
+                    showErrorMessage("Can't create a "..addType.." named "..fileName,1)
                 end
                 setLogos(currentShownDir)
                 taskBarState.state = nil
@@ -979,7 +981,7 @@ local function runScreen(isSubProcess)
 
                     if screenElements[i]:isSelected(event[3],event[4]) and not (selected == screenElements[i]) then
                         didAction = true
-                        if not screenElements[i].isDisk then
+                        if not screenElements[i].isDisk and screenElements[i].dir ~= "system" then
                             taskBarState.state="fileOptions"
                             taskBarState.text[7]="M"
                             taskBarState.text[9]="R"
