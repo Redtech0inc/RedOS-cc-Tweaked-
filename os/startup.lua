@@ -200,7 +200,7 @@ else
     end, function (returnedError)
         term.setCursorPos(1,1)
         printError("ERROR: "..returnedError)
-        printError("graphicLib.lua Is Missing or Brocken -> ROSMainScreen.lua failed")
+        printError("graphicLib.lua Is Missing or Broken -> ROSMainScreen.lua failed")
         if ROSSystemLog then
             ROSSystemLog:write("GraphicLib failed","STARTUP-ERROR",nil,nil,false)
             ROSSystemLog:write("ERROR: "..returnedError,nil,nil,false)
