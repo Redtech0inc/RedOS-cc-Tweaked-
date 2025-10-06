@@ -1,6 +1,6 @@
 local LOG_EVERYTHING = false
 ROSSystemLog:space(2)
-ROSSystemLog:write("----------------------------- "..shell.getRunningProgram().." -----------------------------",nil,nil,false)
+ROSSystemLog:write("----------------------------- DESKTOP-ENV -----------------------------",nil,nil,false)
 ROSSystemLog:space(2)
 
 MainScreenElements = {}
