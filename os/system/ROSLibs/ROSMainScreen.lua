@@ -194,10 +194,8 @@ end
 local function closeRednet()
     if ROSSystemLog then ROSSystemLog:write("closing all Rednet Ports") end
     local modemNames = {}
-    peripheral.find("modem",function (name,modem)
-        if modem.isWireless() then
-            table.insert(modemNames,name)
-        end
+    peripheral.find("modem",function (name)
+        table.insert(modemNames,name)
     end)
     for i=1,#modemNames do
         rednet.close(modemNames[i])
