@@ -400,9 +400,11 @@ local function setLogos(dir,isRefreshLoop)
                             break
                         end
                     end
-                    ROSSystemLog:write(textutils.serialise(drives,{compact = true}))
+                    --ROSSystemLog:write(textutils.serialise(drives,{compact = true}))
                     if drives[1][driveID] then
-                        screenElements[i].name = disk.getLabel(drives[1][driveID]).."("..disk.getID(drives[1][driveID])..")"
+                        local diskName = disk.getLabel(drives[1][driveID]) or "unknownDisk"
+                        local diskID = disk.getID(drives[1][driveID]) or "?"
+                        screenElements[i].name = diskName.."("..diskID..")"
                     else
                         screenElements[i].name = drives[2][driveID] or "failed to load"
                     end
